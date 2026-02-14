@@ -1,0 +1,39 @@
+services:
+  cliff-base:
+    image: cliff/base:latest
+    container_name: cliff-base
+    volumes:
+      - ~/github:/workspace
+      - devuser-home:/home/devuser
+    tty: true
+    stdin_open: true
+
+  cliff-dev:
+    image: cliff/dev:latest
+    container_name: cliff-dev
+    volumes:
+      - ~/github:/workspace
+      - devuser-home:/home/devuser
+    tty: true
+    stdin_open: true
+
+  cliff-obsv:
+    image: cliff/obsv:latest
+    container_name: cliff-obsv
+    volumes:
+      - ~/github:/workspace
+      - devuser-home:/home/devuser
+    tty: true
+    stdin_open: true
+
+  cliff-full:
+    image: cliff/full:latest
+    container_name: cliff-full
+    volumes:
+      - ~/github:/workspace
+      - devuser-home:/home/devuser
+    tty: true
+    stdin_open: true
+
+volumes:
+  devuser-home:

@@ -1,0 +1,58 @@
+FROM cliff/dev:latest
+
+LABEL description="Cliff full image — dev tools + observability stack"
+
+USER root
+
+# Prometheus
+RUN PROM_VERSION="2.50.1" && \
+    curl -fsSL "https://github.com/prometheus/prometheus/releases/download/v${PROM_VERSION}/prometheus-${PROM_VERSION}.linux-amd64.tar.gz" -o /tmp/prometheus.tar.gz && \
+    tar -xzf /tmp/prometheus.tar.gz -C /tmp/ && \
+    cp /tmp/prometheus-*/prometheus /usr/local/bin/ && \
+    cp /tmp/prometheus-*/promtool /usr/local/bin/ && \
+    rm -rf /tmp/prometheus*
+
+# Grafana
+RUN GRAFANA_VERSION="10.4.1" && \
+    curl -fsSL "https://dl.grafana.com/oss/release/grafana-${GRAFANA_VERSION}.linux-amd64.tar.gz" -o /tmp/grafana.tar.gz && \
+    tar -xzf /tmp/grafana.tar.gz -C /opt/ && \
+    ln -sf /opt/grafana-v${GRAFANA_VERSION}/bin/grafana /usr/local/bin/grafana || \
+    ln -sf /opt/grafana-${GRAFANA_VERSION}/bin/grafana /usr/local/bin/grafana || true && \
+    ln -sf /opt/grafana-v${GRAFANA_VERSION}/bin/grafana-cli /usr/local/bin/grafana-cli || \
+    ln -sf /opt/grafana-${GRAFANA_VERSION}/bin/grafana-cli /usr/local/bin/grafana-cli || true && \
+    rm /tmp/grafana.tar.gz
+
+# Loki + LogCLI
+RUN LOKI_VERSION="2.9.6" && \
+    curl -fsSL "https://github.com/grafana/loki/releases/download/v${LOKI_VERSION}/loki-linux-amd64.zip" -o /tmp/loki.zip && \
+    unzip /tmp/loki.zip -d /usr/local/bin/ && \
+    chmod +x /usr/local/bin/loki-linux-amd64 && \
+    mv /usr/local/bin/loki-linux-amd64 /usr/local/bin/loki && \
+    curl -fsSL "https://github.com/grafana/loki/releases/download/v${LOKI_VERSION}/logcli-linux-amd64.zip" -o /tmp/logcli.zip && \
+    unzip /tmp/logcli.zip -d /usr/local/bin/ && \
+    chmod +x /usr/local/bin/logcli-linux-amd64 && \
+    mv /usr/local/bin/logcli-linux-amd64 /usr/local/bin/logcli && \
+    rm -f /tmp/loki.zip /tmp/logcli.zip
+
+# Vector
+RUN VECTOR_VERSION="0.36.1" && \
+    curl -fsSL "https://github.com/vectordotdev/vector/releases/download/v${VECTOR_VERSION}/vector-${VECTOR_VERSION}-x86_64-unknown-linux-musl.tar.gz" -o /tmp/vector.tar.gz && \
+    tar -xzf /tmp/vector.tar.gz -C /tmp/ && \
+    cp /tmp/vector-x86_64-unknown-linux-musl/bin/vector /usr/local/bin/ && \
+    rm -rf /tmp/vector*
+
+# osquery
+RUN apk add --no-cache osquery 2>/dev/null || \
+    (OSQUERY_VERSION="5.12.1" && \
+     curl -fsSL "https://github.com/osquery/osquery/releases/download/${OSQUERY_VERSION}/osquery-${OSQUERY_VERSION}_1.linux_amd64.deb" -o /tmp/osquery.deb && \
+     mkdir -p /tmp/osquery && cd /tmp/osquery && ar x /tmp/osquery.deb && \
+     tar -xzf data.tar.gz -C / 2>/dev/null || tar -xf data.tar.zst -C / 2>/dev/null || true && \
+     rm -rf /tmp/osquery*)
+
+# PostgreSQL client
+RUN apk add --no-cache postgresql-client
+
+USER devuser
+WORKDIR /home/devuser
+
+CMD ["/usr/bin/fish"]

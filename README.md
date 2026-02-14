@@ -1,125 +1,86 @@
 # Cliff
 
-Cliff is a containerized dev environment for working with elastic infrastructure projects.  It provides a consistent toolbox for working with Elastic Compute, Connectivity, and Storage Infrastructure, Infrastructure as Code, and Information and Event Management.
+Cliff is a containerized development environment for elastic infrastructure work. It gets you up close to the cloud without forcing you to learn to fly.
 
-Cliff is called Cliff because it gets you up close to the cloud without forcing you to learn to fly.
+## Status
 
-## Tools
+**v0.1.0** — 4 Docker images build and pass smoke tests.
 
-Cliff includes the following tools:
+## Image Variants
 
-### Infrastructure Provider CLIs
+| Image | Base | Contents |
+|---|---|---|
+| **cliff/base** | Alpine 3.19 | QoL tools, Fish shell, Elixir/OTP, Tcl/Tk, Nix, sqlite3 |
+| **cliff/dev** | cliff/base | Terraform, Ansible, kubectl, Helm, Packer, Vault, AWS/Azure/GCloud CLIs, Tailscale, Wrangler, Smallstep |
+| **cliff/obsv** | cliff/base | Prometheus, Grafana, Loki, LogCLI, Vector, psql |
+| **cliff/full** | cliff/dev | Everything in dev + obsv |
 
-- Aviatrix CLI (aviatrixcli)
-- AWS CLI
-- Azure CLI
-- Cloudflare CLI (flarectl)
-- DigitalOcean CLI (doctl)
-- Equinix Metal CLI (metalctl)
-- Fastly CLI (fastly)
-- Fly.io CLI (flyctl)
-- Google Cloud SDK
-- Hetzner Cloud CLI (hcloud)
-- Linode CLI
-- Proxmox VE CLI (pvesh)
-- Tailscale CLI (tailscale)
-- Vultr CLI (vultr-cli)
+## What's Included
 
-### Infrastructure as Code tools
+### cliff/base
+- **Shell**: bash, fish (default), sudo
+- **Tools**: curl, wget, git, jq, yq, tmux, mosh, ssh, wireguard-tools, sqlite3, coreutils
+- **Languages**: Elixir 1.15 + Erlang/OTP 26, Tcl/Tk 8.6, Nix
+- **User**: `devuser` with passwordless sudo
 
-- Ansible
-- Helm
-- kubectl
-- Packer
-- podman
-- Smallstep CLI (step)
-- Terraform
-- Vault
+### cliff/dev (adds to base)
+- **IaC**: Terraform 1.7, Ansible, kubectl 1.29, Helm 3, Packer 1.10
+- **Provider CLIs**: AWS CLI, Azure CLI, Google Cloud SDK, Tailscale, Cloudflare Wrangler
+- **Security**: Vault 1.15, Smallstep CLI
 
-### Information and Event Management tools
+### cliff/obsv (adds to base)
+- **Monitoring**: Prometheus 2.50, promtool, Grafana 10.4
+- **Logging**: Loki 2.9, LogCLI, Vector 0.36
+- **Database**: PostgreSQL client (psql)
 
-- Cortex CLI (cortex-cli)
-- Fluent Bit CLI (fluent-bit)
-- Fluentd CLI (fluentd)
-- Grafana CLI (grafana-cli)
-- Loki CLI (loki-canary)
-- Osquery CLI (osqueryd)
-- PostgreSQL CLI (psql)
-- Prometheus CLI (prometheus-canary)
-- Promtail CLI (promtail-canary)
-- sqlite3 CLI (sqlite3)
-- Tempo CLI (tempo-canary)
-- Vector CLI (vector)
+### cliff/full
+Everything from dev + obsv combined.
 
-### Linux environment quality of life tools
+## Building
 
-- bash
-- curl
-- fish
-- git
-- jq
-- mosh
-- tmux
-- wireguard-tools
-- yq
-
-### Language Runtimes
-
-- Common Lisp (SBCL)
-- Elixir
-- Nix
-- Prolog (SWI-Prolog)
-- Scheme (Guile)
-- Tcl/Tk
+```bash
+make build-base    # Build base image only
+make build-dev     # Build base + dev
+make build-obsv    # Build base + obsv
+make build-full    # Build base + dev + full
+make build-all     # Build all 4 images
+make test          # Run smoke tests
+make clean         # Remove all cliff images
+```
 
 ## Usage
 
-Cliff is distributed as a Virtual Machine image and as a set of Docker images.
+### Docker Compose
 
-### Virtual Machine
+```bash
+# Start a dev environment with ~/github mounted as /workspace
+docker compose run --rm cliff-dev
 
-The Virtual Machine image can be run in any hypervisor that supports the QCOW2 format, such as QEMU/KVM, VirtualBox, or VMware.
+# Start an observability environment
+docker compose run --rm cliff-obsv
 
-1. Download the latest Cliff QCOW2 image from the [releases page]
-2. Import the QCOW2 image into your hypervisor of choice.
-3. Update the cloud-init configuration to set your username and SSH keys, and volumes to mount.  Cliff will not accept password logins by default and requires a remote filesystem to mount for persistent storage.
-4. Start the VM and SSH into it using the username you configured in cloud-init.  Using mosh is recommended for a more resilient connection.
-5. You can now use Cliff as your dev environment.
-6. To update Cliff, download the latest QCOW2 image and replace your existing VM's disk with the new image.  No data is stored in the image itself, so your home directory and configuration will be preserved.
-
-### Container
-
-Cliff is also available as a set of Docker images.  There are three images available: `cliff/full`, `cliff/dev`, and `cliff/obsv`.  `cliff/base` is also available as a minimal base image, without any infrastructure tools included; it is used to build the other images.
-
-- `cliff/full` is the full environment with all tools included.
-- `cliff/dev` is the development environment with infrastructure provider CLIs and Infrastructure as Code tools included.
-- `cliff/obsv` is the observability environment with monitoring and logging tools included.
-- `cliff/base` is a minimal base image with just the Linux environment quality of life tools and language runtimes.
-
-To run Cliff as a container, create an environment file `cliff.env` with the following minimum contents:
-
-```text
-CLIFF_HOME=/path/to/your/persistent/home
-CLIFF_SSH_AUTH_SOCK=/path/to/your/ssh/auth/socket
+# Start the full environment
+docker compose run --rm cliff-full
 ```
 
-Then, launch the container using compose:
+The compose file mounts `~/github` as `/workspace` and uses a shared volume for the devuser home directory.
 
-```yaml
-version: '3.8'
-services:
-  cliff:
-    image: cliff/full:latest
-    container_name: cliff
-    env_file:
-      - ./cliff.env
-    volumes:
-      - $CLIFF_HOME:/home/devuser
-      - $CLIFF_SSH_AUTH_SOCK:/ssh-agent
-    environment:
-      - SSH_AUTH_SOCK=/ssh-agent
-    tty: true
-    stdin_open: true
+### Direct Docker Run
+
+```bash
+docker run -it --rm \
+  -v ~/github:/workspace \
+  cliff/dev:latest
 ```
 
-You can then login to the container with ssh at `username@cliff.local`.
+## Running Tests
+
+```bash
+make test
+```
+
+Runs `test/smoke.sh` which verifies each image has its expected binaries installed and functional. Currently 34 checks across all 4 images.
+
+## License
+
+AGPL v3 — see LICENSE.

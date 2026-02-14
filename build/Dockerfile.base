@@ -1,0 +1,67 @@
+FROM alpine:3.19
+
+LABEL maintainer="Ian Smith"
+LABEL description="Cliff base image — Alpine + QoL tools + language runtimes"
+
+# Avoid interactive prompts
+ENV LANG=C.UTF-8
+
+# QoL tools
+RUN apk add --no-cache \
+    bash \
+    curl \
+    wget \
+    git \
+    jq \
+    yq \
+    tmux \
+    mosh \
+    fish \
+    sudo \
+    shadow \
+    openssh-client \
+    wireguard-tools \
+    sqlite \
+    ca-certificates \
+    build-base \
+    openssl \
+    openssl-dev \
+    ncurses-dev \
+    libstdc++ \
+    unzip \
+    tar \
+    gzip \
+    xz \
+    coreutils
+
+# Tcl/Tk
+RUN apk add --no-cache \
+    tcl \
+    tk
+
+# Erlang/OTP + Elixir
+RUN apk add --no-cache \
+    erlang \
+    erlang-dev \
+    elixir
+
+# Non-root user
+RUN adduser -D -s /usr/bin/fish devuser && \
+    echo "devuser ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+# Set default shell for devuser
+RUN chsh -s /usr/bin/fish devuser 2>/dev/null || true
+
+# Nix package manager (single-user install as devuser)
+RUN mkdir -m 0755 /nix && chown devuser:devuser /nix
+
+USER devuser
+WORKDIR /home/devuser
+
+RUN curl -L https://nixos.org/nix/install | sh -s -- --no-daemon && \
+    echo '. ~/.nix-profile/etc/profile.d/nix.sh' >> ~/.bashrc || true
+
+# Install hex and rebar for Elixir
+RUN mix local.hex --force && mix local.rebar --force
+
+CMD ["/usr/bin/fish"]

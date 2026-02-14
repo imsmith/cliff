@@ -1,0 +1,73 @@
+FROM cliff/base:latest
+
+LABEL description="Cliff dev image — IaC tools + provider CLIs"
+
+USER root
+
+# Terraform
+RUN TERRAFORM_VERSION="1.7.5" && \
+    curl -fsSL "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip" -o /tmp/terraform.zip && \
+    unzip /tmp/terraform.zip -d /usr/local/bin/ && \
+    rm /tmp/terraform.zip
+
+# Vault CLI
+RUN VAULT_VERSION="1.15.6" && \
+    curl -fsSL "https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip" -o /tmp/vault.zip && \
+    unzip /tmp/vault.zip -d /usr/local/bin/ && \
+    rm /tmp/vault.zip
+
+# Packer
+RUN PACKER_VERSION="1.10.2" && \
+    curl -fsSL "https://releases.hashicorp.com/packer/${PACKER_VERSION}/packer_${PACKER_VERSION}_linux_amd64.zip" -o /tmp/packer.zip && \
+    unzip /tmp/packer.zip -d /usr/local/bin/ && \
+    rm /tmp/packer.zip
+
+# kubectl
+RUN KUBECTL_VERSION="v1.29.3" && \
+    curl -fsSL "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" -o /usr/local/bin/kubectl && \
+    chmod +x /usr/local/bin/kubectl
+
+# Helm
+RUN curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+# Ansible
+RUN apk add --no-cache python3 py3-pip && \
+    pip3 install --break-system-packages ansible-core
+
+# AWS CLI
+RUN apk add --no-cache aws-cli || \
+    (pip3 install --break-system-packages awscli)
+
+# Azure CLI
+RUN pip3 install --break-system-packages azure-cli 2>/dev/null || \
+    echo "Azure CLI install skipped (may need manual install)"
+
+# Google Cloud SDK
+RUN curl -fsSL https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-x86_64.tar.gz -o /tmp/gcloud.tar.gz && \
+    tar -xzf /tmp/gcloud.tar.gz -C /opt/ && \
+    /opt/google-cloud-sdk/install.sh --quiet --path-update=true && \
+    ln -sf /opt/google-cloud-sdk/bin/gcloud /usr/local/bin/gcloud && \
+    rm /tmp/gcloud.tar.gz
+
+# Tailscale
+RUN apk add --no-cache tailscale || \
+    (curl -fsSL https://pkgs.tailscale.com/stable/tailscale_latest_amd64.tgz -o /tmp/tailscale.tgz && \
+     tar -xzf /tmp/tailscale.tgz -C /tmp/ && \
+     cp /tmp/tailscale_*/tailscale /usr/local/bin/ && \
+     rm -rf /tmp/tailscale*)
+
+# Cloudflare Wrangler (via npm)
+RUN apk add --no-cache nodejs npm && \
+    npm install -g wrangler
+
+# Smallstep CLI
+RUN STEP_VERSION="0.25.2" && \
+    curl -fsSL "https://dl.smallstep.com/gh-release/cli/gh-release-header/v${STEP_VERSION}/step_linux_${STEP_VERSION}_amd64.tar.gz" -o /tmp/step.tar.gz && \
+    tar -xzf /tmp/step.tar.gz -C /tmp/ && \
+    cp /tmp/step_*/bin/step /usr/local/bin/ && \
+    rm -rf /tmp/step*
+
+USER devuser
+WORKDIR /home/devuser
+
+CMD ["/usr/bin/fish"]
