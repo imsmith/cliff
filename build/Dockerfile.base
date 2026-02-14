@@ -2,6 +2,8 @@ FROM alpine:3.19
 
 LABEL maintainer="Ian Smith"
 LABEL description="Cliff base image — Alpine + QoL tools + language runtimes"
+LABEL org.opencontainers.image.source=https://github.com/imsmith/cliff
+LABEL org.opencontainers.image.licenses=AGPL-3.0
 
 # Avoid interactive prompts
 ENV LANG=C.UTF-8

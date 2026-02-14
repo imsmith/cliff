@@ -1,6 +1,6 @@
 services:
   cliff-base:
-    image: cliff/base:latest
+    image: ghcr.io/imsmith/cliff-base:latest
     container_name: cliff-base
     volumes:
       - ~/github:/workspace
@@ -9,7 +9,7 @@ services:
     stdin_open: true
 
   cliff-dev:
-    image: cliff/dev:latest
+    image: ghcr.io/imsmith/cliff-dev:latest
     container_name: cliff-dev
     volumes:
       - ~/github:/workspace
@@ -18,7 +18,7 @@ services:
     stdin_open: true
 
   cliff-obsv:
-    image: cliff/obsv:latest
+    image: ghcr.io/imsmith/cliff-obsv:latest
     container_name: cliff-obsv
     volumes:
       - ~/github:/workspace
@@ -27,7 +27,7 @@ services:
     stdin_open: true
 
   cliff-full:
-    image: cliff/full:latest
+    image: ghcr.io/imsmith/cliff-full:latest
     container_name: cliff-full
     volumes:
       - ~/github:/workspace

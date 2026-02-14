@@ -1,6 +1,8 @@
-FROM cliff/dev:latest
+FROM ghcr.io/imsmith/cliff-dev:0.1.0
 
 LABEL description="Cliff full image — dev tools + observability stack"
+LABEL org.opencontainers.image.source=https://github.com/imsmith/cliff
+LABEL org.opencontainers.image.licenses=AGPL-3.0
 
 USER root
 

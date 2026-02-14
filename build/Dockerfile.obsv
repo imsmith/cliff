@@ -1,6 +1,8 @@
-FROM cliff/base:latest
+FROM ghcr.io/imsmith/cliff-base:0.1.0
 
 LABEL description="Cliff observability image — monitoring, logging, querying tools"
+LABEL org.opencontainers.image.source=https://github.com/imsmith/cliff
+LABEL org.opencontainers.image.licenses=AGPL-3.0
 
 USER root
 
