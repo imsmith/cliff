@@ -16,35 +16,28 @@ A containerized development environment for elastic infrastructure work. Four im
 - **cliff/obsv** — base + observability stack (Prometheus, Grafana, Loki, Vector, osquery)
 - **cliff/full** — dev + obsv combined
 
-## Current State (as of Feb 12, 2026)
+## Current State (as of Feb 17, 2026)
 
-**Nothing is implemented.** Only README.md (125 lines) + LICENSE (AGPL v3) + empty directory structure exist. No Dockerfiles, no Makefile, no build scripts, no configs. Two commits total.
+**v0.1.0 — shipped.** All 4 images built, tested, and published to ghcr.io/imsmith.
 
-## Sprint Goal for Cliff
-
-**Exit criteria:**
-```
-make build-all   -> 4 images built successfully
-make test        -> smoke tests pass for all variants
-docker compose   -> can launch any variant and get a working shell
-git tag          -> v0.1.0
-README           -> documents actual contents and usage
-```
-
-## What to Build
+## Architecture
 
 ```
 build/
   Dockerfile.base    # Alpine 3.19, bash, fish, curl, git, jq, tmux, mosh, yq,
-                     # wireguard-tools, sqlite3, Elixir+OTP, Tcl/Tk, Nix
-  Dockerfile.dev     # FROM base + terraform, ansible, kubectl, helm, packer,
+                     # wireguard-tools, sqlite3, Elixir+OTP, Tcl/Tk, Nix, devuser
+  Dockerfile.dev     # FROM cliff-base + terraform, ansible, kubectl, helm, packer,
                      # vault CLI, smallstep, awscli, azure-cli, gcloud, tailscale, wrangler
-  Dockerfile.obsv    # FROM base + prometheus, grafana/grafana-agent, loki, vector, osquery
-  Dockerfile.full    # FROM dev + obsv tools
+  Dockerfile.obsv    # FROM cliff-base + prometheus, grafana, loki, logcli, vector, osquery, psql
+  Dockerfile.full    # FROM cliff-dev + obsv tools
 Makefile             # build-base, build-dev, build-obsv, build-full, build-all, test, clean
 docker-compose.yml   # services for each variant, mount ~/github as /workspace
-test/smoke.sh        # run key binaries in each image, check exit codes
+test/smoke.sh        # smoke tests for all binaries across all 4 images
 ```
+
+## Registry
+
+Images at `ghcr.io/imsmith/cliff-{base,dev,obsv,full}:0.1.0`
 
 ## Out of Scope This Sprint
 
