@@ -1,4 +1,4 @@
-FROM ghcr.io/imsmith/cliff-dev:0.1.0
+FROM ghcr.io/imsmith/cliff-dev:0.2.0
 
 LABEL description="Cliff full image — dev tools + observability stack"
 LABEL org.opencontainers.image.source=https://github.com/imsmith/cliff
@@ -7,7 +7,7 @@ LABEL org.opencontainers.image.licenses=AGPL-3.0
 USER root
 
 # Prometheus
-RUN PROM_VERSION="2.50.1" && \
+RUN PROM_VERSION="3.9.1" && \
     curl -fsSL "https://github.com/prometheus/prometheus/releases/download/v${PROM_VERSION}/prometheus-${PROM_VERSION}.linux-amd64.tar.gz" -o /tmp/prometheus.tar.gz && \
     tar -xzf /tmp/prometheus.tar.gz -C /tmp/ && \
     cp /tmp/prometheus-*/prometheus /usr/local/bin/ && \
@@ -15,7 +15,7 @@ RUN PROM_VERSION="2.50.1" && \
     rm -rf /tmp/prometheus*
 
 # Grafana
-RUN GRAFANA_VERSION="10.4.1" && \
+RUN GRAFANA_VERSION="12.3.3" && \
     curl -fsSL "https://dl.grafana.com/oss/release/grafana-${GRAFANA_VERSION}.linux-amd64.tar.gz" -o /tmp/grafana.tar.gz && \
     tar -xzf /tmp/grafana.tar.gz -C /opt/ && \
     ln -sf /opt/grafana-v${GRAFANA_VERSION}/bin/grafana /usr/local/bin/grafana || \
@@ -25,7 +25,7 @@ RUN GRAFANA_VERSION="10.4.1" && \
     rm /tmp/grafana.tar.gz
 
 # Loki + LogCLI
-RUN LOKI_VERSION="2.9.6" && \
+RUN LOKI_VERSION="3.6.6" && \
     curl -fsSL "https://github.com/grafana/loki/releases/download/v${LOKI_VERSION}/loki-linux-amd64.zip" -o /tmp/loki.zip && \
     unzip /tmp/loki.zip -d /usr/local/bin/ && \
     chmod +x /usr/local/bin/loki-linux-amd64 && \
@@ -37,7 +37,7 @@ RUN LOKI_VERSION="2.9.6" && \
     rm -f /tmp/loki.zip /tmp/logcli.zip
 
 # Vector
-RUN VECTOR_VERSION="0.36.1" && \
+RUN VECTOR_VERSION="0.53.0" && \
     curl -fsSL "https://github.com/vectordotdev/vector/releases/download/v${VECTOR_VERSION}/vector-${VECTOR_VERSION}-x86_64-unknown-linux-musl.tar.gz" -o /tmp/vector.tar.gz && \
     tar -xzf /tmp/vector.tar.gz -C /tmp/ && \
     cp /tmp/vector-x86_64-unknown-linux-musl/bin/vector /usr/local/bin/ && \
@@ -45,7 +45,7 @@ RUN VECTOR_VERSION="0.36.1" && \
 
 # osquery
 RUN apk add --no-cache osquery 2>/dev/null || \
-    (OSQUERY_VERSION="5.12.1" && \
+    (OSQUERY_VERSION="5.21.0" && \
      curl -fsSL "https://github.com/osquery/osquery/releases/download/${OSQUERY_VERSION}/osquery-${OSQUERY_VERSION}_1.linux_amd64.deb" -o /tmp/osquery.deb && \
      mkdir -p /tmp/osquery && cd /tmp/osquery && ar x /tmp/osquery.deb && \
      tar -xzf data.tar.gz -C / 2>/dev/null || tar -xf data.tar.zst -C / 2>/dev/null || true && \

@@ -1,4 +1,4 @@
-FROM ghcr.io/imsmith/cliff-base:0.1.0
+FROM ghcr.io/imsmith/cliff-base:0.2.0
 
 LABEL description="Cliff dev image — IaC tools + provider CLIs"
 LABEL org.opencontainers.image.source=https://github.com/imsmith/cliff
@@ -7,25 +7,25 @@ LABEL org.opencontainers.image.licenses=AGPL-3.0
 USER root
 
 # Terraform
-RUN TERRAFORM_VERSION="1.7.5" && \
+RUN TERRAFORM_VERSION="1.14.5" && \
     curl -fsSL "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip" -o /tmp/terraform.zip && \
     unzip /tmp/terraform.zip -d /usr/local/bin/ && \
     rm /tmp/terraform.zip
 
 # Vault CLI
-RUN VAULT_VERSION="1.15.6" && \
-    curl -fsSL "https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip" -o /tmp/vault.zip && \
+RUN VAULT_VERSION="1.21.2" && \
+    curl -fsSL "https://github.com/hashicorp/vault/archive/refs/tags/v${VAULT_VERSION}.zip" -o /tmp/vault.zip && \
     unzip /tmp/vault.zip -d /usr/local/bin/ && \
     rm /tmp/vault.zip
 
 # Packer
-RUN PACKER_VERSION="1.10.2" && \
-    curl -fsSL "https://releases.hashicorp.com/packer/${PACKER_VERSION}/packer_${PACKER_VERSION}_linux_amd64.zip" -o /tmp/packer.zip && \
+RUN PACKER_VERSION="1.15.0" && \
+    curl -fsSL "https://github.com/hashicorp/packer/archive/refs/tags/v${PACKER_VERSION}.zip" -o /tmp/packer.zip && \
     unzip /tmp/packer.zip -d /usr/local/bin/ && \
     rm /tmp/packer.zip
 
 # kubectl
-RUN KUBECTL_VERSION="v1.29.3" && \
+RUN KUBECTL_VERSION="v1.35.1" && \
     curl -fsSL "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" -o /usr/local/bin/kubectl && \
     chmod +x /usr/local/bin/kubectl
 
@@ -63,7 +63,7 @@ RUN apk add --no-cache nodejs npm && \
     npm install -g wrangler
 
 # Smallstep CLI
-RUN STEP_VERSION="0.25.2" && \
+RUN STEP_VERSION="0.29.0" && \
     curl -fsSL "https://dl.smallstep.com/gh-release/cli/gh-release-header/v${STEP_VERSION}/step_linux_${STEP_VERSION}_amd64.tar.gz" -o /tmp/step.tar.gz && \
     tar -xzf /tmp/step.tar.gz -C /tmp/ && \
     cp /tmp/step_*/bin/step /usr/local/bin/ && \

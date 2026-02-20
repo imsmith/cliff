@@ -1,4 +1,4 @@
-FROM alpine:3.19
+FROM alpine:3.23
 
 LABEL maintainer="Ian Smith"
 LABEL description="Cliff base image — Alpine + QoL tools + language runtimes"

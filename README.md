@@ -4,13 +4,15 @@ Cliff is a containerized development environment for elastic infrastructure work
 
 ## Status
 
+**v0.2.0** - update all packages to current/latest as of 20260220
+
 **v0.1.0** — 4 Docker images build and pass smoke tests.
 
 ## Image Variants
 
 | Image | Base | Contents |
 |---|---|---|
-| **cliff/base** | Alpine 3.19 | QoL tools, Fish shell, Elixir/OTP, Tcl/Tk, Nix, sqlite3 |
+| **cliff/base** | Alpine Linux | QoL tools, Fish shell, Elixir/OTP, Tcl/Tk, Nix, sqlite3 |
 | **cliff/dev** | cliff/base | Terraform, Ansible, kubectl, Helm, Packer, Vault, AWS/Azure/GCloud CLIs, Tailscale, Wrangler, Smallstep |
 | **cliff/obsv** | cliff/base | Prometheus, Grafana, Loki, LogCLI, Vector, psql |
 | **cliff/full** | cliff/dev | Everything in dev + obsv |
