@@ -8,4 +8,28 @@ test profile-parse-minimal {parses an image-only profile} -body {
     dict get $result image
 } -result "cliff-base:0.2.0"
 
+test profile-parse-describe {parses describe string} -body {
+    set r [cliff::profile::parse_string {
+        describe "Test profile"
+        image cliff-base:0.2.0
+    }]
+    dict get $r describe
+} -result "Test profile"
+
+test profile-parse-workspace {parses workspace kv line} -body {
+    set r [cliff::profile::parse_string {
+        image cliff-base:0.2.0
+        workspace mode=ro
+    }]
+    dict get $r workspace mode
+} -result "ro"
+
+test profile-parse-home {parses home kv line with multiple pairs} -body {
+    set r [cliff::profile::parse_string {
+        image cliff-base:0.2.0
+        home mode=tmpfs size=512m
+    }]
+    list [dict get $r home mode] [dict get $r home size]
+} -result {tmpfs 512m}
+
 cleanupTests
