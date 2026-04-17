@@ -1,0 +1,47 @@
+package require tcltest
+namespace import ::tcltest::*
+
+source [file join [file dirname [info script]] .. .. lib cliff profile.tcl]
+
+set FIXDIR [file join [file dirname [info script]] fixtures]
+
+test inherit-resolves-parent {child inherits parent image when not overridden} -setup {
+    file mkdir $FIXDIR
+    set fh [open $FIXDIR/parent.tcl w]; puts $fh {image cliff-base:0.2.0}; close $fh
+    set fh [open $FIXDIR/child.tcl w]; puts $fh {inherit parent}; close $fh
+} -body {
+    set r [cliff::profile::load_file $FIXDIR/child.tcl]
+    dict get $r image
+} -cleanup {
+    file delete -force $FIXDIR
+} -result "cliff-base:0.2.0"
+
+test inherit-child-overrides {child overrides parent wholesale per block} -setup {
+    file mkdir $FIXDIR
+    set fh [open $FIXDIR/parent.tcl w]; puts $fh {
+        image cliff-base:0.2.0
+        egress { allow foo.com:443 }
+    }; close $fh
+    set fh [open $FIXDIR/child.tcl w]; puts $fh {
+        inherit parent
+        egress { allow bar.com:443 }
+    }; close $fh
+} -body {
+    set r [cliff::profile::load_file $FIXDIR/child.tcl]
+    dict get $r egress allow
+} -cleanup {
+    file delete -force $FIXDIR
+} -result {bar.com:443}
+
+test inherit-cycle-detected {cycles fail loud} -setup {
+    file mkdir $FIXDIR
+    set fh [open $FIXDIR/a.tcl w]; puts $fh {inherit b}; close $fh
+    set fh [open $FIXDIR/b.tcl w]; puts $fh {inherit a}; close $fh
+} -body {
+    catch {cliff::profile::load_file $FIXDIR/a.tcl} err
+    set err
+} -cleanup {
+    file delete -force $FIXDIR
+} -match glob -result "*cycle*"
+
+cleanupTests

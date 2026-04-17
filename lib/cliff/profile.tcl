@@ -1,5 +1,47 @@
 namespace eval ::cliff::profile {
     variable _state
+    variable _load_stack [list]
+
+    proc load_file {path} {
+        variable _load_stack
+        set abs [file normalize $path]
+        if {$abs in $_load_stack} {
+            error "profile: inheritance cycle: $_load_stack -> $abs"
+        }
+        lappend _load_stack $abs
+        set fh [open $path r]
+        set src [read $fh]
+        close $fh
+
+        # Two-pass: first extract `inherit <name>` lines, load parent, then apply child.
+        set parent ""
+        set remaining [list]
+        foreach line [split $src "\n"] {
+            set trimmed [string trim $line]
+            if {[regexp {^inherit\s+(\S+)\s*$} $trimmed -> name]} {
+                if {$parent ne ""} { error "profile: multiple inherit directives" }
+                set parent $name
+            } else {
+                lappend remaining $line
+            }
+        }
+
+        if {$parent ne ""} {
+            set parent_path [file join [file dirname $abs] "$parent.tcl"]
+            set result [load_file $parent_path]
+        } else {
+            set result [dict create egress [dict create allow [list] deny [list]]]
+        }
+
+        # Parse child src on top of parent state
+        set child [parse_string [join $remaining "\n"]]
+        foreach k [dict keys $child] {
+            dict set result $k [dict get $child $k]
+        }
+
+        set _load_stack [lrange $_load_stack 0 end-1]
+        return $result
+    }
 
     proc parse_string {src} {
         variable _state
