@@ -1,4 +1,4 @@
-VERSION ?= 0.2.0
+VERSION ?= 0.3.0
 REGISTRY ?= ghcr.io/imsmith
 
 .PHONY: build-base build-dev build-obsv build-full build-all \
@@ -6,16 +6,16 @@ REGISTRY ?= ghcr.io/imsmith
         test clean
 
 build-base:
-	docker build -t $(REGISTRY)/cliff-base:$(VERSION) -t $(REGISTRY)/cliff-base:latest -f build/Dockerfile.base .
+	docker build -t $(REGISTRY)/cliff-base:$(VERSION) -t $(REGISTRY)/cliff-base:latest -t cliff-base:$(VERSION) -f build/Dockerfile.base .
 
 build-dev: build-base
-	docker build -t $(REGISTRY)/cliff-dev:$(VERSION) -t $(REGISTRY)/cliff-dev:latest -f build/Dockerfile.dev .
+	docker build -t $(REGISTRY)/cliff-dev:$(VERSION) -t $(REGISTRY)/cliff-dev:latest -t cliff-dev:$(VERSION) -f build/Dockerfile.dev .
 
 build-obsv: build-base
-	docker build -t $(REGISTRY)/cliff-obsv:$(VERSION) -t $(REGISTRY)/cliff-obsv:latest -f build/Dockerfile.obsv .
+	docker build -t $(REGISTRY)/cliff-obsv:$(VERSION) -t $(REGISTRY)/cliff-obsv:latest -t cliff-obsv:$(VERSION) -f build/Dockerfile.obsv .
 
 build-full: build-dev
-	docker build -t $(REGISTRY)/cliff-full:$(VERSION) -t $(REGISTRY)/cliff-full:latest -f build/Dockerfile.full .
+	docker build -t $(REGISTRY)/cliff-full:$(VERSION) -t $(REGISTRY)/cliff-full:latest -t cliff-full:$(VERSION) -f build/Dockerfile.full .
 
 build-all: build-base build-dev build-obsv build-full
 
