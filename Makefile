@@ -40,6 +40,9 @@ push-all: push-base push-dev push-obsv push-full
 test:
 	@bash test/smoke.sh
 
+build-egress:
+	docker build -f images/egress/Dockerfile -t cliff-egress:0.3.0 .
+
 clean:
 	docker rmi -f $(REGISTRY)/cliff-full:$(VERSION) $(REGISTRY)/cliff-full:latest \
 		$(REGISTRY)/cliff-obsv:$(VERSION) $(REGISTRY)/cliff-obsv:latest \
