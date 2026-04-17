@@ -22,4 +22,90 @@ namespace eval ::cliff::session {
         file mkdir $d
         return $d
     }
+
+    proc run {profile_name args} {
+        array set A {project "" command "" interactive 1}
+        array set A $args
+
+        set profile_path [file join $::CLIFF_ROOT profiles $profile_name.tcl]
+        if {![file exists $profile_path]} { error "no such profile: $profile_name" }
+        set profile [cliff::profile::load_file $profile_path]
+        cliff::validate::resolved $profile
+
+        set id [new_id $profile_name]
+        set sdir [session_dir $id]
+
+        # Record resolved profile
+        set fh [open [file join $sdir profile.tcl] w]
+        puts $fh "# resolved profile for session $id"
+        dict for {k v} $profile { puts $fh "$k: $v" }
+        close $fh
+
+        # Materialize creds (currently no-op if profile has none)
+        set creds [cliff::creds::materialize $profile]
+
+        # Start egress sidecar if needed
+        set need_egress [cliff::egress::needs_sidecar $profile]
+        if {$need_egress} {
+            exec docker network create cliff-$id >&@ stderr
+            set allowlist [cliff::egress::render_allowlist [dict get $profile egress allow]]
+            set egress_cid [exec docker run -d \
+                --name cliff-egress-$id \
+                --network cliff-$id \
+                --read-only \
+                --tmpfs /tmp --tmpfs /var \
+                --cap-drop ALL --cap-add NET_BIND_SERVICE \
+                --security-opt no-new-privileges \
+                -e CLIFF_ALLOWLIST=$allowlist \
+                cliff-egress:0.3.0]
+        }
+
+        # Build app-container argv
+        set command $A(command)
+        if {$command eq ""} { set command {/bin/sh -l} }
+        set argv [cliff::docker::build_argv \
+            session_id $id \
+            profile $profile \
+            project $A(project) \
+            command $command]
+
+        # Inject egress env + DNS
+        if {$need_egress} {
+            # Proxy the app container through the egress sidecar
+            lappend argv \
+                --dns cliff-egress-$id \
+                --env http_proxy=http://cliff-egress-$id:3128 \
+                --env https_proxy=http://cliff-egress-$id:3128 \
+                --env HTTP_PROXY=http://cliff-egress-$id:3128 \
+                --env HTTPS_PROXY=http://cliff-egress-$id:3128
+        }
+
+        # For interactive sessions, swap -i with -it
+        if {$A(interactive)} {
+            set idx [lsearch $argv "-i"]
+            if {$idx >= 0} { set argv [lreplace $argv $idx $idx -it] }
+        }
+
+        set exit_code 0
+        if {[catch {
+            exec {*}$argv >@stdout 2>@stderr <@stdin
+        } err]} {
+            set exit_code 1
+            puts stderr "cliff: session $id failed: $err"
+        }
+
+        # Teardown
+        if {$need_egress} {
+            catch { exec docker stop cliff-egress-$id }
+            catch { exec docker rm -f cliff-egress-$id }
+            catch { exec docker network rm cliff-$id }
+        }
+
+        # Record exit
+        set fh [open [file join $sdir exit] w]
+        puts $fh $exit_code
+        close $fh
+
+        return $exit_code
+    }
 }
