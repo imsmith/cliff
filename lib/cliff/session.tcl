@@ -86,13 +86,34 @@ namespace eval ::cliff::session {
             if {$idx >= 0} { set argv [lreplace $argv $idx $idx -it] }
         }
 
+        # Two-stage: docker create → docker cp creds → docker start -ai
+
+        # Replace "docker run" with "docker create"; drop --rm (not valid with create).
+        set create_argv [lreplace $argv 0 1 docker create]
+        set idx [lsearch $create_argv "--rm"]
+        if {$idx >= 0} { set create_argv [lreplace $create_argv $idx $idx] }
+
+        set container_id [string trim [exec {*}$create_argv]]
+
+        # Write creds into /run/creds inside the container.
+        dict for {name bytes} $creds {
+            set tmp_path [file join /tmp cliff-creds-[pid]-[clock microseconds]-$name]
+            set fh [open $tmp_path w 0600]
+            puts -nonewline $fh $bytes
+            close $fh
+            exec docker cp $tmp_path $container_id:/run/creds/$name
+            file delete $tmp_path
+        }
+
         set exit_code 0
+        set start_flags [expr {$A(interactive) ? "-ai" : "-a"}]
         if {[catch {
-            exec {*}$argv >@stdout 2>@stderr <@stdin
+            exec docker start $start_flags $container_id >@stdout 2>@stderr <@stdin
         } err]} {
             set exit_code 1
             puts stderr "cliff: session $id failed: $err"
         }
+        catch { exec docker rm -f $container_id }
 
         # Teardown
         if {$need_egress} {
