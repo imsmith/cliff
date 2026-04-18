@@ -35,7 +35,7 @@ namespace eval ::cliff::docker {
         # Home
         set home_size 512m
         if {[dict exists $p home size]} { set home_size [dict get $p home size] }
-        lappend argv --tmpfs /home/devuser:rw,size=$home_size,mode=0700
+        lappend argv --tmpfs /home/devuser:rw,size=$home_size,mode=0700,uid=1000,gid=1000
 
         # Limits
         if {[dict exists $p limits cpus]}   { lappend argv --cpus [dict get $p limits cpus] }

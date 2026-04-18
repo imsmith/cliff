@@ -47,7 +47,7 @@ test docker-argv-home-tmpfs {tmpfs home with size} -body {
             home [dict create mode tmpfs size 512m]] \
         project /tmp/proj \
         command {/bin/sh -l}]
-    contains $argv {--tmpfs /home/devuser:rw,size=512m,mode=0700}
+    contains $argv {--tmpfs /home/devuser:rw,size=512m,mode=0700,uid=1000,gid=1000}
 } -result 1
 
 test docker-argv-limits {applies cpu/memory/pids limits} -body {
