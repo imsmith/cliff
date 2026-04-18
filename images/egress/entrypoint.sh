@@ -19,7 +19,7 @@ echo "$CLIFF_ALLOWLIST" | while IFS= read -r line; do
     printf 'server=/%s/1.1.1.1\n' "$host" >> /tmp/dnsmasq.conf
 done
 
-dnsmasq -k -C /tmp/dnsmasq.conf --pid-file=/tmp/dnsmasq.pid &
+dnsmasq --no-daemon -C /tmp/dnsmasq.conf --pid-file=/tmp/dnsmasq.pid &
 
 # Copy mitmproxy CA into /tmp so it can write dhparam and other runtime files.
 mkdir -p /tmp/mitmproxy

@@ -59,6 +59,15 @@ namespace eval ::cliff::session {
                 -e CLIFF_ALLOWLIST=$allowlist \
                 -v $sdir:/opt/cliff/log:rw \
                 cliff-egress:0.3.0]
+            # Wait for mitmproxy to be ready on port 3128 (max 10s)
+            set ready 0
+            for {set t 0} {$t < 20} {incr t} {
+                if {![catch {exec docker exec cliff-egress-$id sh -c {nc -z 127.0.0.1 3128}} ]} {
+                    set ready 1; break
+                }
+                after 500
+            }
+            if {!$ready} { error "egress sidecar did not become ready in 10s" }
         }
 
         # Build app-container argv
