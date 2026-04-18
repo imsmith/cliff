@@ -5,7 +5,7 @@ RUN apk add --no-cache dnsmasq py3-pip ca-certificates \
  && pip3 install --break-system-packages mitmproxy==10.2.* \
  && apk del gcc musl-dev python3-dev openssl-dev rust cargo
 
-RUN mkdir -p /etc/mitmproxy /opt/cliff
+RUN mkdir -p /etc/mitmproxy /opt/cliff/log
 
 # Bake cliff CA so app containers trust the egress proxy.
 # mitmproxy-ca.pem must be key + cert concatenated (mitmproxy's expected format).

@@ -54,9 +54,10 @@ namespace eval ::cliff::session {
                 --network cliff-$id \
                 --read-only \
                 --tmpfs /tmp --tmpfs /var \
-                --cap-drop ALL --cap-add NET_BIND_SERVICE \
+                --cap-drop ALL --cap-add NET_BIND_SERVICE --cap-add DAC_OVERRIDE \
                 --security-opt no-new-privileges \
                 -e CLIFF_ALLOWLIST=$allowlist \
+                -v $sdir:/opt/cliff/log:rw \
                 cliff-egress:0.3.0]
         }
 
@@ -69,15 +70,22 @@ namespace eval ::cliff::session {
             project $A(project) \
             command $command]
 
-        # Inject egress env + DNS
+        # Inject egress env + DNS: insert before the image name so docker sees
+        # these as options, not as arguments to the container command.
         if {$need_egress} {
-            # Proxy the app container through the egress sidecar
-            lappend argv \
-                --dns cliff-egress-$id \
+            # Resolve egress container IP (--dns requires an IP, not a name).
+            set egress_ip [string trim [exec docker inspect \
+                -f "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" \
+                cliff-egress-$id]]
+            set img [dict get $profile image]
+            set img_idx [lsearch -exact $argv $img]
+            set egress_opts [list \
+                --dns $egress_ip \
                 --env http_proxy=http://cliff-egress-$id:3128 \
                 --env https_proxy=http://cliff-egress-$id:3128 \
                 --env HTTP_PROXY=http://cliff-egress-$id:3128 \
-                --env HTTPS_PROXY=http://cliff-egress-$id:3128
+                --env HTTPS_PROXY=http://cliff-egress-$id:3128]
+            set argv [linsert $argv $img_idx {*}$egress_opts]
         }
 
         # For interactive sessions, swap -i with -it
@@ -115,8 +123,10 @@ namespace eval ::cliff::session {
         }
         catch { exec docker rm -f $container_id }
 
-        # Teardown
+        # Teardown: give mitmdump a moment to flush remaining log lines
+        # before docker stop sends SIGTERM.
         if {$need_egress} {
+            after 1000
             catch { exec docker stop cliff-egress-$id }
             catch { exec docker rm -f cliff-egress-$id }
             catch { exec docker network rm cliff-$id }

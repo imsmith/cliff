@@ -9,7 +9,7 @@ namespace eval ::cliff::cmd {
                 set fh [open [file join $d exit] r]; set exit_code [string trim [read $fh]]; close $fh
             }
             set when [clock format [file mtime $d] -format {%Y-%m-%d %H:%M}]
-            puts [format "%s  %s  exit=%s" $id $when $exit_code]
+            if {[catch {puts [format "%s  %s  exit=%s" $id $when $exit_code]}]} break
         }
     }
 }
