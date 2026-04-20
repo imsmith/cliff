@@ -1,21 +1,21 @@
-VERSION ?= 0.2.0
+VERSION ?= 0.3.0
 REGISTRY ?= ghcr.io/imsmith
 
 .PHONY: build-base build-dev build-obsv build-full build-all \
         push-base push-dev push-obsv push-full push-all \
-        test clean
+        test test-unit test-integration test-sandbox clean
 
 build-base:
-	docker build -t $(REGISTRY)/cliff-base:$(VERSION) -t $(REGISTRY)/cliff-base:latest -f build/Dockerfile.base .
+	docker build -t $(REGISTRY)/cliff-base:$(VERSION) -t $(REGISTRY)/cliff-base:latest -t cliff-base:$(VERSION) -f build/Dockerfile.base .
 
 build-dev: build-base
-	docker build -t $(REGISTRY)/cliff-dev:$(VERSION) -t $(REGISTRY)/cliff-dev:latest -f build/Dockerfile.dev .
+	docker build -t $(REGISTRY)/cliff-dev:$(VERSION) -t $(REGISTRY)/cliff-dev:latest -t cliff-dev:$(VERSION) -f build/Dockerfile.dev .
 
 build-obsv: build-base
-	docker build -t $(REGISTRY)/cliff-obsv:$(VERSION) -t $(REGISTRY)/cliff-obsv:latest -f build/Dockerfile.obsv .
+	docker build -t $(REGISTRY)/cliff-obsv:$(VERSION) -t $(REGISTRY)/cliff-obsv:latest -t cliff-obsv:$(VERSION) -f build/Dockerfile.obsv .
 
 build-full: build-dev
-	docker build -t $(REGISTRY)/cliff-full:$(VERSION) -t $(REGISTRY)/cliff-full:latest -f build/Dockerfile.full .
+	docker build -t $(REGISTRY)/cliff-full:$(VERSION) -t $(REGISTRY)/cliff-full:latest -t cliff-full:$(VERSION) -f build/Dockerfile.full .
 
 build-all: build-base build-dev build-obsv build-full
 
@@ -39,6 +39,21 @@ push-all: push-base push-dev push-obsv push-full
 
 test:
 	@bash test/smoke.sh
+
+build-egress:
+	docker build -f images/egress/Dockerfile -t cliff-egress:0.3.0 .
+
+test-unit:
+	tclsh test/unit/all.tcl
+
+test-integration: build-all build-egress
+	./test/integration/enforcement_fs.sh
+	./test/integration/enforcement_net.sh
+	./test/integration/enforcement_creds.sh
+	./test/integration/enforcement_limits.sh
+	./test/integration/lifecycle.sh
+
+test-sandbox: test-unit test-integration
 
 clean:
 	docker rmi -f $(REGISTRY)/cliff-full:$(VERSION) $(REGISTRY)/cliff-full:latest \

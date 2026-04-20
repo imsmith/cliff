@@ -36,6 +36,10 @@ RUN apk add --no-cache \
     xz \
     coreutils
 
+# Install cliff-egress CA so mitmproxy-intercepted TLS is trusted inside containers.
+COPY images/ca/cliff-egress.crt /usr/local/share/ca-certificates/cliff-egress.crt
+RUN update-ca-certificates
+
 # Tcl/Tk
 RUN apk add --no-cache \
     tcl \

@@ -1,0 +1,16 @@
+package require tcltest
+namespace import ::tcltest::*
+source [file join [file dirname [info script]] .. .. lib cliff session.tcl]
+
+test session-id-format {id is 6+ hex chars} -body {
+    regexp {^[0-9a-f]{6,}$} [cliff::session::new_id base]
+} -result 1
+
+test session-id-unique {two IDs differ} -body {
+    set a [cliff::session::new_id base]
+    after 10
+    set b [cliff::session::new_id base]
+    expr {$a ne $b}
+} -result 1
+
+cleanupTests

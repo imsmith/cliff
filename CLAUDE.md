@@ -16,9 +16,13 @@ A containerized development environment for elastic infrastructure work. Four im
 - **cliff/obsv** — base + observability stack (Prometheus, Grafana, Loki, Vector, osquery)
 - **cliff/full** — dev + obsv combined
 
-## Current State (as of Feb 17, 2026)
+## Current State (as of 2026-04-17)
 
-**v0.1.0 — shipped.** All 4 images built, tested, and published to ghcr.io/imsmith.
+**v0.3.0 — LLM sandbox shipped.** `bin/cliff` + profiles + hardened container sessions. See `docs/superpowers/specs/2026-04-17-cliff-llm-sandbox-design.md` and `docs/superpowers/plans/2026-04-17-cliff-llm-sandbox.md`.
+
+**v0.2.0 — shipped.** All package versions refreshed.
+
+**v0.1.0 — shipped.** 4 Docker images built, tested, published to ghcr.io/imsmith.
 
 ## Architecture
 

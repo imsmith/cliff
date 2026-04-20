@@ -1,0 +1,13 @@
+package require tcltest
+namespace import ::tcltest::*
+source [file join [file dirname [info script]] .. .. lib cliff egress.tcl]
+
+test egress-render-joins-allowlist {joins allow entries with newlines} -body {
+    cliff::egress::render_allowlist {foo.com:443 bar.com:443}
+} -result "foo.com:443\nbar.com:443"
+
+test egress-render-empty {empty list yields empty string} -body {
+    cliff::egress::render_allowlist {}
+} -result ""
+
+cleanupTests

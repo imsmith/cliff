@@ -1,0 +1,95 @@
+package require tcltest
+namespace import ::tcltest::*
+
+source [file join [file dirname [info script]] .. .. lib cliff docker.tcl]
+
+proc contains {haystack needles} {
+    foreach n $needles {
+        if {[lsearch -exact $haystack $n] < 0} { return 0 }
+    }
+    return 1
+}
+
+test docker-argv-minimal {emits read-only rootfs and non-root user} -body {
+    set argv [cliff::docker::build_argv \
+        session_id abc123 \
+        profile [dict create image cliff-base:0.2.0] \
+        project /tmp/proj \
+        command {/bin/sh -l}]
+    contains $argv {--read-only --user devuser --security-opt no-new-privileges cliff-base:0.2.0}
+} -result 1
+
+test docker-argv-drops-caps {drops all caps by default} -body {
+    set argv [cliff::docker::build_argv \
+        session_id abc123 \
+        profile [dict create image cliff-base:0.2.0] \
+        project /tmp/proj \
+        command {/bin/sh -l}]
+    contains $argv {--cap-drop ALL}
+} -result 1
+
+test docker-argv-workspace-ro {bind-mounts workspace read-only} -body {
+    set argv [cliff::docker::build_argv \
+        session_id abc123 \
+        profile [dict create \
+            image cliff-base:0.2.0 \
+            workspace [dict create mode ro]] \
+        project /tmp/proj \
+        command {/bin/sh -l}]
+    contains $argv {--volume /tmp/proj:/workspace:ro}
+} -result 1
+
+test docker-argv-home-tmpfs {tmpfs home with size} -body {
+    set argv [cliff::docker::build_argv \
+        session_id abc123 \
+        profile [dict create \
+            image cliff-base:0.2.0 \
+            home [dict create mode tmpfs size 512m]] \
+        project /tmp/proj \
+        command {/bin/sh -l}]
+    contains $argv {--tmpfs /home/devuser:rw,size=512m,mode=0700,uid=1000,gid=1000}
+} -result 1
+
+test docker-argv-limits {applies cpu/memory/pids limits} -body {
+    set argv [cliff::docker::build_argv \
+        session_id abc123 \
+        profile [dict create \
+            image cliff-base:0.2.0 \
+            limits [dict create cpus 2 memory 4g pids 512]] \
+        project /tmp/proj \
+        command {/bin/sh -l}]
+    contains $argv {--cpus 2 --memory 4g --pids-limit 512}
+} -result 1
+
+test docker-argv-env {applies env vars} -body {
+    set argv [cliff::docker::build_argv \
+        session_id abc123 \
+        profile [dict create \
+            image cliff-base:0.2.0 \
+            env [dict create AWS_REGION us-east-1]] \
+        project /tmp/proj \
+        command {/bin/sh -l}]
+    contains $argv {--env AWS_REGION=us-east-1}
+} -result 1
+
+test docker-argv-network-none-for-no-egress {no egress allow => --network none} -body {
+    set argv [cliff::docker::build_argv \
+        session_id abc123 \
+        profile [dict create image cliff-base:0.2.0] \
+        project /tmp/proj \
+        command {/bin/sh -l}]
+    contains $argv {--network none}
+} -result 1
+
+test docker-argv-network-session-for-egress {egress allow => session-scoped network} -body {
+    set argv [cliff::docker::build_argv \
+        session_id abc123 \
+        profile [dict create \
+            image cliff-base:0.2.0 \
+            egress [dict create allow {foo.com:443} deny {}]] \
+        project /tmp/proj \
+        command {/bin/sh -l}]
+    contains $argv {--network cliff-abc123}
+} -result 1
+
+cleanupTests

@@ -1,0 +1,4 @@
+#!/usr/bin/env tclsh
+set ::CLIFF_ROOT [file normalize [file join [file dirname [info script]] ..]]
+source [file join $::CLIFF_ROOT lib cliff main.tcl]
+::cliff::main::dispatch $argv

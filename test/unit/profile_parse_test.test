@@ -1,0 +1,72 @@
+package require tcltest
+namespace import ::tcltest::*
+
+source [file join [file dirname [info script]] .. .. lib cliff profile.tcl]
+
+test profile-parse-minimal {parses an image-only profile} -body {
+    set result [cliff::profile::parse_string "image cliff-base:0.2.0"]
+    dict get $result image
+} -result "cliff-base:0.2.0"
+
+test profile-parse-describe {parses describe string} -body {
+    set r [cliff::profile::parse_string {
+        describe "Test profile"
+        image cliff-base:0.2.0
+    }]
+    dict get $r describe
+} -result "Test profile"
+
+test profile-parse-workspace {parses workspace kv line} -body {
+    set r [cliff::profile::parse_string {
+        image cliff-base:0.2.0
+        workspace mode=ro
+    }]
+    dict get $r workspace mode
+} -result "ro"
+
+test profile-parse-home {parses home kv line with multiple pairs} -body {
+    set r [cliff::profile::parse_string {
+        image cliff-base:0.2.0
+        home mode=tmpfs size=512m
+    }]
+    list [dict get $r home mode] [dict get $r home size]
+} -result {tmpfs 512m}
+
+test profile-parse-egress {parses egress block with multiple allow lines} -body {
+    set r [cliff::profile::parse_string {
+        image cliff-base:0.2.0
+        egress {
+            allow *.amazonaws.com:443
+            allow registry-1.docker.io:443
+        }
+    }]
+    dict get $r egress allow
+} -result {*.amazonaws.com:443 registry-1.docker.io:443}
+
+test profile-parse-limits {parses limits block kv pairs} -body {
+    set r [cliff::profile::parse_string {
+        image cliff-base:0.2.0
+        limits { cpus 2; memory 4g; pids 512 }
+    }]
+    list [dict get $r limits cpus] [dict get $r limits memory] [dict get $r limits pids]
+} -result {2 4g 512}
+
+test profile-parse-env {parses env block} -body {
+    set r [cliff::profile::parse_string {
+        image cliff-base:0.2.0
+        env { AWS_REGION us-east-1 }
+    }]
+    dict get $r env AWS_REGION
+} -result "us-east-1"
+
+test profile-parse-creds {parses creds block with helper args} -body {
+    set r [cliff::profile::parse_string {
+        image cliff-base:0.2.0
+        creds {
+            aws helper=aws-sts args={role=arn:aws:iam::1:role/r ttl=1h}
+        }
+    }]
+    list [dict get $r creds aws helper] [dict get $r creds aws args]
+} -result {aws-sts {role=arn:aws:iam::1:role/r ttl=1h}}
+
+cleanupTests

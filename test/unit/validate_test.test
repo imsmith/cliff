@@ -1,0 +1,30 @@
+package require tcltest
+namespace import ::tcltest::*
+
+source [file join [file dirname [info script]] .. .. lib cliff profile.tcl]
+source [file join [file dirname [info script]] .. .. lib cliff validate.tcl]
+
+test validate-requires-image {image is required} -body {
+    catch {cliff::validate::resolved [dict create]} err
+    set err
+} -match glob -result "*image*required*"
+
+test validate-accepts-minimal {minimal valid profile passes} -body {
+    cliff::validate::resolved [dict create image cliff-base:0.2.0]
+} -result "ok"
+
+test validate-workspace-mode {workspace mode must be ro or rw} -body {
+    catch {cliff::validate::resolved [dict create \
+        image cliff-base:0.2.0 \
+        workspace [dict create mode badvalue]]} err
+    set err
+} -match glob -result "*workspace*mode*"
+
+test validate-egress-format {egress allow entries must be host:port} -body {
+    catch {cliff::validate::resolved [dict create \
+        image cliff-base:0.2.0 \
+        egress [dict create allow {not-a-hostport}]]} err
+    set err
+} -match glob -result "*egress*host:port*"
+
+cleanupTests

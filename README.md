@@ -38,6 +38,47 @@ Cliff is a containerized development environment for elastic infrastructure work
 ### cliff/full
 Everything from dev + obsv combined.
 
+## Cliff CLI (v0.3.0)
+
+`bin/cliff` launches hardened, profile-driven, ephemeral container sessions safe for LLM
+use. Each session runs under a profile declaring image, mount posture, credentials, egress
+allowlist, and resource limits. Credentials are minted on the host and written to a
+container-private tmpfs; egress (if any) is proxied through a per-session mitmproxy sidecar
+enforcing the profile's allowlist; hostnames outside the allowlist resolve to 127.0.0.1.
+
+### Quick start
+
+```bash
+bin/cliff list                                          # show profiles
+bin/cliff describe yolo-dev                             # show resolved profile
+bin/cliff run yolo-dev --project=$PWD                   # interactive shell
+bin/cliff exec yolo-dev --project=$PWD -- terraform init # one-shot command
+bin/cliff sessions                                      # recent sessions
+bin/cliff session <id>                                  # session detail
+```
+
+### Profiles shipped
+
+| Profile | Image | Workspace | Creds | Egress |
+|---|---|---|---|---|
+| `base` | cliff-base | ro | none | none |
+| `dev-offline` | cliff-dev | rw | none | none |
+| `yolo-dev` | cliff-dev | rw | none | package registries |
+| `dev-aws-read` | cliff-dev | rw | STS read role | `*.amazonaws.com` |
+| `dev-aws-write` | cliff-dev | rw | STS write role | `*.amazonaws.com` |
+| `obsv-local` | cliff-obsv | ro | none | none |
+
+Replace `READ_ROLE_ARN` / `WRITE_ROLE_ARN` in the AWS profiles with your account's role ARNs
+before using.
+
+### For LLMs
+
+Expose `bin/cliff` on PATH. In project-level `CLAUDE.md` (or equivalent), add:
+
+> For any infrastructure command (terraform, kubectl, aws, helm, etc.), invoke via
+> `cliff exec <profile> --project=<path> -- <cmd>`. Do not run these tools directly on the
+> host. See `cliff list` for available profiles.
+
 ## Building
 
 ```bash
