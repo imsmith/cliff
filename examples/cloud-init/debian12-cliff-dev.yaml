@@ -1,0 +1,51 @@
+#cloud-config
+# Debian 12 cloud image + rootless podman + cliff-dev pre-pulled.
+#
+# Provided so you can spin a VM that runs cliff-dev under podman
+# without building a custom image.
+#
+# Usage:
+#   - AWS:   pass as user-data when launching the official Debian 12 AMI
+#            (find via SSM: /aws/service/debian/release/bookworm/latest/amd64)
+#   - GCP:   --metadata-from-file user-data=debian12-cliff-dev.yaml on the
+#            debian-cloud/debian-12 family
+#   - Azure: --custom-data on the Debian:debian-12 marketplace image
+#   - local: cloud-localds seed.iso debian12-cliff-dev.yaml; attach to qemu
+#
+# Replace the ssh_authorized_keys entry before use.
+
+package_update: true
+packages:
+  - podman
+  - fuse-overlayfs
+  - slirp4netns
+  - uidmap
+  - ca-certificates
+
+users:
+  - default
+  - name: cliff
+    groups: [users, sudo]
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAA...REPLACE_ME ian@host
+    lock_passwd: true
+
+write_files:
+  - path: /etc/subuid
+    append: true
+    content: "cliff:100000:65536\n"
+  - path: /etc/subgid
+    append: true
+    content: "cliff:100000:65536\n"
+  - path: /etc/containers/registries.conf.d/cliff.conf
+    content: |
+      unqualified-search-registries = ["docker.io", "ghcr.io"]
+
+runcmd:
+  # Persistent user session so rootless podman keeps running after logout.
+  - loginctl enable-linger cliff
+  # Pre-pull the image as cliff (rootless storage under ~cliff/.local/share/containers).
+  - sudo -iu cliff podman pull ghcr.io/imsmith/cliff-dev:0.3.0
+  - sudo -iu cliff podman image ls

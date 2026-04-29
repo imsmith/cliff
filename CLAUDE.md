@@ -1,54 +1,50 @@
 # Cliff — Containerized Dev Environment
 
-## Sprint Context
-
-Active sprint through Feb 28, 2026. Full plan: `/home/imsmith/Documents/remote.vault.001/src/099 Katachora/SPRINT-2026-02.md`
-
-Cliff is Phase 2 (Feb 19-22). Read the sprint plan for day-by-day tasks.
-
 ## What Cliff Is
 
 "Cliff gets you up close to the cloud without forcing you to learn to fly."
 
-A containerized development environment for elastic infrastructure work. Four image variants:
-- **cliff/base** — Alpine + QoL tools + language runtimes (Elixir, Tcl, Nix)
-- **cliff/dev** — base + IaC tools (Terraform, Ansible, kubectl, Helm, Packer) + provider CLIs
-- **cliff/obsv** — base + observability stack (Prometheus, Grafana, Loki, Vector, osquery)
-- **cliff/full** — dev + obsv combined
+A containerized development environment for elastic infrastructure work, plus a host-side launcher (`bin/cliff`) for hardened, profile-driven, ephemeral container sessions safe for LLM use.
 
-## Current State (as of 2026-04-17)
+Full narrative: `docs/cliff.html`. Quick reference: `README.md`.
 
-**v0.3.0 — LLM sandbox shipped.** `bin/cliff` + profiles + hardened container sessions. See `docs/superpowers/specs/2026-04-17-cliff-llm-sandbox-design.md` and `docs/superpowers/plans/2026-04-17-cliff-llm-sandbox.md`.
+## Current State
 
-**v0.2.0 — shipped.** All package versions refreshed.
+Post-sprint expansion mode. Latest tagged release: **v0.3.0** (LLM sandbox).
 
-**v0.1.0 — shipped.** 4 Docker images built, tested, published to ghcr.io/imsmith.
+- **v0.3.0** — `bin/cliff` CLI + profiles + hardened ephemeral sessions. Spec at `docs/superpowers/specs/2026-04-17-cliff-llm-sandbox-design.md`, plan at `docs/superpowers/plans/2026-04-17-cliff-llm-sandbox.md`.
+- **v0.2.0** — package versions refreshed.
+- **v0.1.0** — four Docker images built, smoke-tested, published to `ghcr.io/imsmith`.
+
+The Feb 2026 sprint that produced v0.1.0 closed on schedule; the sprint plan (`/home/imsmith/Documents/remote.vault.001/src/099 Katachora/SPRINT-2026-02.md`) is historical reference, not active work.
 
 ## Architecture
 
 ```
 build/
-  Dockerfile.base    # Alpine 3.19, bash, fish, curl, git, jq, tmux, mosh, yq,
-                     # wireguard-tools, sqlite3, Elixir+OTP, Tcl/Tk, Nix, devuser
-  Dockerfile.dev     # FROM cliff-base + terraform, ansible, kubectl, helm, packer,
-                     # vault CLI, smallstep, awscli, azure-cli, gcloud, tailscale, wrangler
-  Dockerfile.obsv    # FROM cliff-base + prometheus, grafana, loki, logcli, vector, osquery, psql
-  Dockerfile.full    # FROM cliff-dev + obsv tools
+  Dockerfile.base    # Alpine 3.23 + shell QoL + Elixir/OTP + Tcl + Nix + devuser
+  Dockerfile.dev     # FROM cliff-base + IaC stack + cloud CLIs
+  Dockerfile.obsv    # FROM cliff-base + Prometheus, Grafana, Loki, Vector, osquery, psql
+  Dockerfile.full    # FROM cliff-dev + obsv tools layered on
+bin/cliff            # Tcl entrypoint; dispatches to lib/cliff
+lib/cliff/           # launcher implementation (Tcl)
+profiles/            # *.tcl profiles: base, dev-offline, yolo-dev, dev-aws-read, dev-aws-write, obsv-local
+images/              # cliff-egress CA, mitmproxy assets
+helpers/             # credential helpers (aws-sts, etc.)
+src/                 # auxiliary source
+test/                # smoke tests + lib/CLI integration tests
+docs/cliff.html      # canonical user-facing narrative
+docs/superpowers/    # design specs and plans
 Makefile             # build-base, build-dev, build-obsv, build-full, build-all, test, clean
-docker-compose.yml   # services for each variant, mount ~/github as /workspace
-test/smoke.sh        # smoke tests for all binaries across all 4 images
+docker-compose.yml   # services for each variant; mount ~/github as /workspace
 ```
 
-## Registry
+## Out of Scope
 
-Images at `ghcr.io/imsmith/cliff-{base,dev,obsv,full}:0.1.0`
+Not currently planned. Decide deliberately before adding.
 
-## Out of Scope This Sprint
-
-- QCOW2/VM images
-- Packer configs
-- CI/CD pipeline
-- Cloud-init
+- QCOW2/VM images, Packer configs (cloud-init reference example exists at `examples/cloud-init/` only)
+- CI/CD pipeline for image builds
 - Exotic provider CLIs (Equinix, Fastly, Fly, Hetzner, Vultr, Linode)
 - Common Lisp, Prolog, Scheme runtimes
-- SSH server configuration
+- SSH server inside the container

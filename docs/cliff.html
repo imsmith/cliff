@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cliff: A Containerized Development Environment for Elastic Infrastructure</title>
+<style>
+@charset "UTF-8";
+html { font-size: 15px; }
+body {
+  width: 87.5%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 12.5%;
+  font-family: et-book, Palatino, "Palatino Linotype", "Palatino LT STD", "Book Antiqua", Georgia, serif;
+  background-color: #fffff8;
+  color: #111;
+  max-width: 1400px;
+  counter-reset: sidenote-counter;
+  line-height: 1.45;
+}
+h1 { font-weight: 400; margin-top: 4rem; font-size: 3.2rem; line-height: 1; }
+h2 { font-style: italic; font-weight: 400; margin-top: 2.1rem; font-size: 2.2rem; line-height: 1; }
+h3 { font-style: italic; font-weight: 400; font-size: 1.7rem; margin-top: 2rem; line-height: 1; }
+p, ol, ul { font-size: 1.4rem; line-height: 2rem; }
+p { margin-top: 1.4rem; padding-right: 0; vertical-align: baseline; }
+.subtitle { font-style: italic; margin-top: 1rem; margin-bottom: 1rem; font-size: 1.8rem; display: block; line-height: 1; }
+article { padding: 5rem 0rem; position: relative; }
+section { padding-top: 1rem; padding-bottom: 1rem; }
+p, footer, div.epigraph > blockquote { width: 55%; }
+ol, ul { width: 50%; -webkit-padding-start: 5%; -webkit-padding-end: 5%; }
+li { padding: 0.5rem 0; }
+figure { padding: 0; border: 0; font-size: 100%; font: inherit; vertical-align: baseline; max-width: 55%; -webkit-margin-start: 0; -webkit-margin-end: 0; margin: 0 0 3em 0; }
+figcaption { float: right; clear: right; margin-top: 0; margin-bottom: 0; font-size: 1.1rem; line-height: 1.6; vertical-align: baseline; position: relative; max-width: 40%; }
+figure.fullwidth figcaption { margin-right: 24%; }
+
+.sidenote, .marginnote {
+  float: right;
+  clear: right;
+  margin-right: -60%;
+  width: 50%;
+  margin-top: 0.3rem;
+  margin-bottom: 0;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  vertical-align: baseline;
+  position: relative;
+}
+.sidenote-number { counter-increment: sidenote-counter; }
+.sidenote-number:after, .sidenote:before {
+  font-family: et-book-roman-old-style;
+  position: relative;
+  vertical-align: baseline;
+}
+.sidenote-number:after {
+  content: counter(sidenote-counter);
+  font-size: 1rem;
+  top: -0.5rem;
+  left: 0.1rem;
+}
+.sidenote:before {
+  content: counter(sidenote-counter) " ";
+  font-size: 1rem;
+  top: -0.5rem;
+}
+blockquote { font-size: 1.4rem; }
+blockquote p { width: 55%; margin-right: 40px; }
+blockquote footer { width: 55%; font-size: 1.1rem; text-align: right; }
+section > p, section > footer, section > table { width: 55%; }
+section > dl, section > ol, section > ul { width: 50%; }
+.epigraph { margin: 5em 0; }
+.epigraph > blockquote { margin-top: 3em; margin-bottom: 3em; }
+.epigraph > blockquote, .epigraph > blockquote > p { font-style: italic; }
+.epigraph > blockquote > footer { font-style: normal; }
+.epigraph > blockquote > footer > cite { font-style: italic; }
+.numeral { font-family: et-book-roman-old-style; }
+.danger { color: #800; }
+.code, code, pre, pre.code, .ms, .mh, .mi, .mn { font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace; }
+code { font-size: 1.0rem; line-height: 1.42; }
+.sans { font-family: Gill Sans, Gill Sans MT, Calibri, sans-serif; letter-spacing: .03em; }
+section > pre { width: 52.5%; }
+pre.code {
+  font-size: 0.95rem;
+  width: 52.5%;
+  margin-left: 2.5%;
+  overflow-x: auto;
+  line-height: 1.42;
+  background: #f4f3e6;
+  padding: 0.8rem 1rem;
+  border-left: 2px solid #aaa;
+}
+pre.code.fullwidth { max-width: 90%; width: 90%; }
+.fullwidth { max-width: 90%; clear: both; }
+span.newthought { font-variant: small-caps; font-size: 1.2em; }
+input.margin-toggle { display: none; }
+label.sidenote-number { display: inline; }
+label.margin-toggle:not(.sidenote-number) { display: none; }
+@media (max-width: 760px) {
+  body { width: 84%; padding-left: 8%; padding-right: 8%; }
+  hr, section > p, section > footer, section > table { width: 100%; }
+  pre.code { width: 97%; }
+  section > dl, section > ol, section > ul { width: 90%; }
+  figure { max-width: 90%; }
+  figcaption, figure.fullwidth figcaption { margin-right: 0%; max-width: none; }
+  blockquote { margin-left: 1.5em; margin-right: 0em; }
+  blockquote p, blockquote footer { width: 100%; }
+  label.margin-toggle:not(.sidenote-number) {
+    display: inline; border: 1px solid #333; border-radius: 50%;
+    font-size: 10px; line-height: 1em; text-align: center;
+    width: 14px; height: 14px; padding-top: 1px; cursor: pointer;
+  }
+  .sidenote, .marginnote { display: none; }
+  .margin-toggle:checked + .sidenote, .margin-toggle:checked + .marginnote {
+    display: block; float: left; left: 1rem; clear: both; width: 95%;
+    margin: 1rem 2.5%; vertical-align: baseline; position: relative;
+  }
+  label { cursor: pointer; }
+  pre.code, pre.code.fullwidth { width: 90%; padding: 0; }
+  .table-caption { display: block; float: right; clear: both; width: 98%;
+    margin-top: 1rem; margin-bottom: 0.5rem; margin-left: 1%; margin-right: 1%;
+    vertical-align: baseline; position: relative; }
+  div.table-wrapper { overflow-x: auto; font-family: "Trebuchet MS", "Gill Sans", "Gill Sans MT", sans-serif; }
+}
+table.booktabs { border-collapse: collapse; font-size: 1.1rem; margin: 1em 0; width: 55%; }
+table.booktabs.fullwidth { width: 90%; }
+table.booktabs th { text-align: left; border-bottom: 1px solid #111; padding: 0.4em 0.8em; }
+table.booktabs td { padding: 0.3em 0.8em; vertical-align: top; }
+table.booktabs tbody tr:last-child td { border-top: 1px solid #111; }
+table.booktabs tbody tr.group td { border-top: 1px solid #888; font-style: italic; padding-top: 0.6em; }
+</style>
+</head>
+<body>
+<article>
+
+<h1>Cliff</h1>
+<p class="subtitle">A literate walkthrough of a containerized development environment for elastic infrastructure work</p>
+
+<section>
+<div class="epigraph">
+<blockquote>
+<p>Cliff gets you up close to the cloud without forcing you to learn to fly.</p>
+<footer>—the project tagline, said unironically</footer>
+</blockquote>
+</div>
+
+<p><span class="newthought">Working with elastic infrastructure</span> is, among other things, an exercise in toolchain accumulation. Terraform pins itself to a version that disagrees with your provider plugin. <code>kubectl</code> minor-version skew breaks <code>kubectl explain</code>. The Google Cloud SDK upgrades itself in the background and now your CI script writes a different lockfile than your laptop. Three cloud CLIs, half a dozen provider CLIs, two language runtimes, an observability binary you used once and forgot to uninstall — and the host operating system is silently the place all of them have agreed to fight in.<label for="sn-host" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-host" class="margin-toggle"/><span class="sidenote">The host is the wrong place for cloud tooling for the same reason the host is the wrong place for production binaries: nothing about it was designed for the workload, and the cost of being wrong about that is paid one mysterious 3 a.m. <code>terraform apply</code> at a time.</span></p>
+
+<p>Cliff is the wager that this is solvable by putting the entire toolchain into a small set of container images, layering them so the substrate is shared, and entering them through a host-side launcher that knows how to scope credentials, restrict egress, and write down what happened. The four images are the substrate. The launcher is the discipline. This document walks both, in roughly the order a new user encounters them.</p>
+</section>
+
+<h2>0. Why four images, not one</h2>
+
+<section>
+<p>The naive build is one fat image with everything in it: Elixir, Tcl, Terraform, kubectl, Prometheus, Grafana, the cloud CLIs, all of it. Pulled once, available everywhere, no decisions for the user. It is also six gigabytes, takes ten minutes to build, and forces every container session to inherit every dependency some other unrelated tool dragged in. Cliff splits the work along a different seam.</p>
+
+<p>The split: a <em>base</em> image with shell quality-of-life, the project's language runtimes, and a non-root user; a <em>dev</em> image that adds the infrastructure-as-code stack and the cloud provider CLIs; an <em>obsv</em> image that adds the monitoring and logging binaries; and a <em>full</em> image that combines dev and obsv for sessions where the separation isn't worth the build time. Each image is FROM the previous, so the layer cache is shared and pulls are incremental.<label for="sn-layer" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-layer" class="margin-toggle"/><span class="sidenote">A practical consequence: you almost never want to <code>docker pull cliff-full</code> on a fresh machine. Pull <code>cliff-dev</code>, do your work, and only fetch the obsv layers if you actually need to query a Prometheus.</span></p>
+
+<p>The split is a claim about how the work decomposes. Most sessions are either "I am writing infrastructure code" or "I am chasing a problem through telemetry." The first wants Terraform and a cloud CLI; the second wants Loki and a Grafana. They want different things badly enough to justify two images. They want enough <em>shared</em> things — a shell, a language runtime, a CA bundle — to justify a base.</p>
+</section>
+
+<h2>1. The base image</h2>
+
+<section>
+<p><span class="newthought">Every cliff container starts here.</span> The base image is Alpine 3.23, chosen for its small package surface and its musl-libc footprint, plus a curated set of tools that any session will want regardless of what it's doing.</p>
+
+<pre class="code">FROM alpine:3.23
+
+ENV LANG=C.UTF-8
+
+RUN apk add --no-cache \
+    bash curl wget git jq yq tmux mosh fish sudo shadow \
+    openssh-client wireguard-tools sqlite ca-certificates \
+    build-base openssl openssl-dev ncurses-dev libstdc++ \
+    unzip tar gzip xz coreutils</pre>
+
+<p>Three groups in one <code>apk add</code>: the quality-of-life shell stack (bash, fish, tmux, mosh), the data-shoveling utilities (curl, jq, yq, sqlite), and the build dependencies (<code>build-base</code>, the <code>-dev</code> packages, <code>libstdc++</code>) that exist so Erlang and Elixir can compile NIFs at install time.<label for="sn-build" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-build" class="margin-toggle"/><span class="sidenote">The <code>build-base</code> meta-package costs about 200 MB of image size; the alternative is to ship without NIF support and discover at runtime that Elixir can't load <code>:crypto</code>. The trade is worth making once, at build time, where it's invisible to the session.</span> <code>wireguard-tools</code> is in the base because cliff sessions sometimes need to reach a private network; <code>mosh</code> because they sometimes need to survive a flaky one.</p>
+
+<p>The next two lines are unobtrusive but load-bearing:</p>
+
+<pre class="code">COPY images/ca/cliff-egress.crt /usr/local/share/ca-certificates/cliff-egress.crt
+RUN update-ca-certificates</pre>
+
+<p>This bakes the cliff-egress mitmproxy CA into the system trust store. The CLI runs a per-session mitmproxy sidecar to enforce the egress allowlist (covered later); without the CA in the trust store, every TLS connection from the container would fail certificate validation, and every <code>terraform init</code> would erupt into x509 errors. Building the CA into the image instead of bind-mounting it at runtime keeps the per-session setup trivial and means an image-only user (no CLI) can still reach the public internet without surprises.</p>
+
+<pre class="code">RUN apk add --no-cache tcl tk
+RUN apk add --no-cache erlang erlang-dev elixir</pre>
+
+<p>The two language runtimes the project itself is written in. Tcl is the scripting language for cliff's profiles and the launcher. Elixir is the application language for the wider ecosystem cliff supports. Putting them in the base image — rather than a language-specific layer — is a deliberate choice: any cliff session might want to run a Tcl helper, any session might want to drop into <code>iex</code>. Specialization belongs upstream of the runtime, not downstream of it.</p>
+
+<pre class="code">RUN adduser -D -s /usr/bin/fish devuser && \
+    echo "devuser ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+RUN chsh -s /usr/bin/fish devuser 2>/dev/null || true
+
+RUN mkdir -m 0755 /nix && chown devuser:devuser /nix
+USER devuser
+WORKDIR /home/devuser
+
+RUN curl -L https://nixos.org/nix/install | sh -s -- --no-daemon && \
+    echo '. ~/.nix-profile/etc/profile.d/nix.sh' >> ~/.bashrc || true
+
+RUN mix local.hex --force && mix local.rebar --force
+
+CMD ["/usr/bin/fish"]</pre>
+
+<p>The user, the shell, and the escape hatch. <code>devuser</code> is the unprivileged identity every session runs as; passwordless sudo exists because installing things inside an interactive container session is a normal thing to want to do, and locking it down would just make people fight the container.<label for="sn-sudo" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-sudo" class="margin-toggle"/><span class="sidenote">"But sudo!" — yes, this is a defense-in-depth story. The container is ephemeral by default, the user is unprivileged at the kernel layer, the egress is allowlisted, and the workspace mount is configurable. Passwordless sudo inside the container is a productivity affordance, not a security boundary.</span> Nix is installed single-user under <code>devuser</code> so the session has a way to install something the image didn't think of, without sudo and without polluting <code>/usr</code>. <code>mix local.hex</code> and <code>mix local.rebar</code> save the session from a "where's hex?" question every time someone runs an Elixir build.</p>
+</section>
+
+<h2>2. The dev image</h2>
+
+<section>
+<p><span class="newthought">The dev image adds the IaC and provider-CLI stack</span> on top of base. Each tool's install method is whatever its upstream considers official, which is a less coherent story than one might want and a more honest one than the alternative.</p>
+
+<pre class="code">FROM ghcr.io/imsmith/cliff-base:0.3.0
+
+USER root
+
+RUN TERRAFORM_VERSION="1.14.5" && \
+    curl -fsSL "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip" -o /tmp/terraform.zip && \
+    unzip /tmp/terraform.zip -d /usr/local/bin/ && \
+    rm /tmp/terraform.zip
+
+RUN VAULT_VERSION="1.21.2" && \
+    curl -fsSL "https://github.com/hashicorp/vault/archive/refs/tags/v${VAULT_VERSION}.zip" -o /tmp/vault.zip && \
+    unzip /tmp/vault.zip -d /usr/local/bin/ && \
+    rm /tmp/vault.zip
+
+RUN PACKER_VERSION="1.15.0" && \
+    curl -fsSL "https://github.com/hashicorp/packer/archive/refs/tags/v${PACKER_VERSION}.zip" -o /tmp/packer.zip && \
+    unzip /tmp/packer.zip -d /usr/local/bin/ && \
+    rm /tmp/packer.zip
+
+RUN KUBECTL_VERSION="v1.35.1" && \
+    curl -fsSL "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" -o /usr/local/bin/kubectl && \
+    chmod +x /usr/local/bin/kubectl
+
+RUN curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash</pre>
+
+<p>The HashiCorp tools and kubectl get pinned versions, fetched from upstream as zips, unpacked into <code>/usr/local/bin</code>. Helm uses its official install script, which is unpinned — this is a small wart; bumping cliff's version forces a rebuild that picks up whatever Helm has shipped since.<label for="sn-helm" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-helm" class="margin-toggle"/><span class="sidenote">Pinning Helm explicitly would mean reading the install script and reproducing what it does. The trade-off was made in favor of using the upstream-blessed path; the cost is that "the same tag of cliff-dev, built on a different day, has a different Helm" is technically true. Acceptable for a developer environment, not acceptable for a release artifact.</span></p>
+
+<pre class="code">RUN apk add --no-cache python3 py3-pip && \
+    pip3 install --break-system-packages ansible-core
+
+RUN apk add --no-cache aws-cli || \
+    (pip3 install --break-system-packages awscli)
+
+RUN pip3 install --break-system-packages azure-cli 2>/dev/null || \
+    echo "Azure CLI install skipped (may need manual install)"</pre>
+
+<p>The Python-installed tools. Ansible is pip-installed because Alpine's apk-packaged version lags behind upstream by a release or two. AWS CLI prefers the apk package and falls back to pip when the apk package is unavailable — it has been intermittently missing from Alpine's community repository, and the fallback pattern survives that without breaking the build. Azure CLI is the worst offender: it routinely fails to install on Alpine because of native dependencies that don't quite work under musl, so the build emits a warning and continues rather than failing. A session that needs Azure CLI is on notice.<label for="sn-azure" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-azure" class="margin-toggle"/><span class="sidenote">There is a path through this: build Azure CLI in a multi-stage image with glibc compatibility shims. It is on the list. It is not at the top of the list.</span></p>
+
+<pre class="code">RUN curl -fsSL https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-x86_64.tar.gz -o /tmp/gcloud.tar.gz && \
+    tar -xzf /tmp/gcloud.tar.gz -C /opt/ && \
+    /opt/google-cloud-sdk/install.sh --quiet --path-update=true && \
+    ln -sf /opt/google-cloud-sdk/bin/gcloud /usr/local/bin/gcloud && \
+    rm /tmp/gcloud.tar.gz
+
+RUN apk add --no-cache tailscale || \
+    (curl -fsSL https://pkgs.tailscale.com/stable/tailscale_latest_amd64.tgz -o /tmp/tailscale.tgz && \
+     tar -xzf /tmp/tailscale.tgz -C /tmp/ && \
+     cp /tmp/tailscale_*/tailscale /usr/local/bin/ && \
+     rm -rf /tmp/tailscale*)
+
+RUN apk add --no-cache nodejs npm && \
+    npm install -g wrangler
+
+RUN STEP_VERSION="0.29.0" && \
+    curl -fsSL "https://dl.smallstep.com/gh-release/cli/gh-release-header/v${STEP_VERSION}/step_linux_${STEP_VERSION}_amd64.tar.gz" -o /tmp/step.tar.gz && \
+    tar -xzf /tmp/step.tar.gz -C /tmp/ && \
+    cp /tmp/step_*/bin/step /usr/local/bin/ && \
+    rm -rf /tmp/step*
+
+USER devuser</pre>
+
+<p>The remaining tools follow the same pattern with minor variations: Google Cloud SDK from upstream tarball; Tailscale from apk with tarball fallback; Cloudflare's Wrangler dragged in via npm (and Node.js along with it); Smallstep's <code>step</code> CLI from upstream. Three things are worth naming. First, the dev image now contains <em>three</em> language runtimes — Elixir from base, Python from Ansible, Node from Wrangler — none of which the session asked for, all of which are baggage some tool requires. Second, every install path is different, because every upstream made different choices, and pretending otherwise would just hide the breakage. Third, the image returns to <code>USER devuser</code> at the end so the running container is unprivileged by default.</p>
+</section>
+
+<h2>3. The obsv image</h2>
+
+<section>
+<p><span class="newthought">The obsv image is the telemetry exploration tier.</span> It is not a monitoring stack — cliff is a development environment, not a place to run production Prometheus. It contains the binaries you want when you are <em>looking at</em> someone else's running stack: <code>promtool</code> against an existing Prometheus, <code>logcli</code> against an existing Loki, an ad-hoc Grafana for staring at metrics, a Vector you can experiment with, an <code>osquery</code> for poking at the host you've SSHed to, a <code>psql</code> for everything that ended up in Postgres.</p>
+
+<pre class="code">FROM ghcr.io/imsmith/cliff-base:0.3.0
+
+RUN PROM_VERSION="3.9.1" && \
+    curl -fsSL ".../prometheus-${PROM_VERSION}.linux-amd64.tar.gz" -o /tmp/prometheus.tar.gz && \
+    tar -xzf /tmp/prometheus.tar.gz -C /tmp/ && \
+    cp /tmp/prometheus-*/prometheus /usr/local/bin/ && \
+    cp /tmp/prometheus-*/promtool /usr/local/bin/
+
+RUN GRAFANA_VERSION="12.3.3" && curl -fsSL "..." -o /tmp/grafana.tar.gz && tar ...
+RUN LOKI_VERSION="3.6.6" && curl -fsSL "..." && unzip ...
+RUN VECTOR_VERSION="0.53.0" && curl -fsSL "..." && tar ...
+
+RUN apk add --no-cache osquery 2>/dev/null || \
+    (OSQUERY_VERSION="5.21.0" && \
+     curl -fsSL "..." -o /tmp/osquery.deb && \
+     ar x /tmp/osquery.deb && tar -xzf data.tar.gz -C / 2>/dev/null || \
+     tar -xf data.tar.zst -C / 2>/dev/null)
+
+RUN apk add --no-cache postgresql-client</pre>
+
+<p>The pattern is by now familiar — pinned versions, upstream release tarballs, unpacked into <code>/usr/local/bin</code>. The osquery install is the ugliest because osquery does not ship Alpine packages and the maintainers have so far declined to; the fallback unpacks the Debian <code>.deb</code> into the Alpine root with a tar invocation that handles two compression formats, because the deb has switched between gzip and zstd at least once in living memory.<label for="sn-osquery" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-osquery" class="margin-toggle"/><span class="sidenote">This is the worst install path in the repository. It works. It is not pretty. The alternative — building osquery from source — is a multi-hour CI job. The trade was made in favor of "works most of the time, fails loudly when it doesn't."</span></p>
+
+<p>What's <em>not</em> in obsv is as load-bearing as what is. There is no Alertmanager, because cliff is not where you handle alerts. No Tempo, because tracing is the dev image's problem if it's anyone's. No exporters — node_exporter, blackbox_exporter — because cliff is the consumer, not the producer. The discipline is "tools to look at telemetry," not "a stack to generate it."</p>
+</section>
+
+<h2>4. The full image</h2>
+
+<section>
+<p>Cliff-full is, structurally, cliff-dev with the obsv RUN blocks layered on top. It is not built FROM cliff-obsv-and-cliff-dev (Docker has no such operation); it is built FROM cliff-dev with the obsv install steps repeated. This is duplication of source, not duplication of layers — the resulting image shares all of dev's layers with cliff-dev, and adds new layers for the obsv tools. A user who pulls both cliff-dev and cliff-full pays for the obsv layers exactly once.</p>
+
+<p>The duplication of <em>source</em> is real, and it is a wart. If the obsv install steps change, both <code>Dockerfile.obsv</code> and <code>Dockerfile.full</code> have to be updated. The alternative — extracting the obsv steps into a script that both Dockerfiles call — was considered and rejected on the grounds that "two short Dockerfiles you can read" beats "one Dockerfile and a script you have to chase." If the divergence ever exceeds three RUN blocks, the calculus changes.</p>
+
+<p>Cliff-full exists for the case where the separation between dev and obsv isn't worth a session boundary. Diagnosing a deployment problem often means writing terraform <em>and</em> reading metrics in the same shell history. Two containers, two terminal tabs, one head: cliff-full is the answer when the head is the bottleneck.</p>
+</section>
+
+<h2>5. The launcher</h2>
+
+<section>
+<p><span class="newthought">Docker-compose is fine for "give me a shell."</span> It is not fine for "let an LLM run terraform here." The difference is everything cliff's launcher does between <code>docker run</code> and the prompt: minting a scoped credential, spinning up a per-session egress proxy, mounting a tmpfs at <code>/run/creds</code>, capping CPU and memory and PIDs, recording what happened, and tearing it all down on exit.</p>
+
+<p>The launcher is <code>bin/cliff</code>, four lines of Tcl that load the rest of the implementation and dispatch a subcommand:</p>
+
+<pre class="code">#!/usr/bin/env tclsh
+set ::CLIFF_ROOT [file normalize [file join [file dirname [info script]] ..]]
+source [file join $::CLIFF_ROOT lib cliff main.tcl]
+::cliff::main::dispatch $argv</pre>
+
+<p>The subcommands are <code>list</code>, <code>describe</code>, <code>run</code>, <code>exec</code>, <code>sessions</code>, and <code>session</code>. <code>list</code> shows the available profiles. <code>describe &lt;profile&gt;</code> shows the resolved profile after inheritance. <code>run</code> launches an interactive shell. <code>exec</code> launches a one-shot command and returns its exit code. <code>sessions</code> lists recent sessions. <code>session &lt;id&gt;</code> shows the detail of one.</p>
+</section>
+
+<h3>5.1 Profiles</h3>
+
+<section>
+<p>A profile declares a session's posture: which image, how the workspace is mounted, what the home directory is, what credentials to mint, what egress to allow, what resource caps to apply. Profiles are written in Tcl, with a small DSL that the launcher evaluates in a sandboxed interpreter.<label for="sn-tcl" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-tcl" class="margin-toggle"/><span class="sidenote">Tcl was chosen because the project already standardizes on it for scripting, the syntax is forgiving (no quoting wars over JSON commas), and a profile DSL is exactly what Tcl is good at: a small set of commands that read like configuration.</span> The floor profile is <code>base.tcl</code>:</p>
+
+<pre class="code">describe "Floor profile: tmpfs home, no creds, no egress"
+image    cliff-base:0.3.0
+
+workspace mode=ro
+home      mode=tmpfs size=256m
+
+limits { cpus 1; memory 1g; pids 256 }</pre>
+
+<p>The discipline is in what isn't there. No <code>creds</code> block, so no credentials. No <code>egress</code> block, so no outbound network. The workspace is read-only. The home directory is a 256 MB tmpfs that vanishes when the container exits. CPU and memory and PID counts are capped low. A session in the base profile can read your code and run scripts; it cannot reach the network, cannot write to disk except in the tmpfs, and cannot exhaust the host.</p>
+
+<p>Richer profiles inherit from base and add affordances:</p>
+
+<pre class="code">inherit base
+describe "Dev image, writable workspace, no creds, egress to package registries only"
+image    cliff-dev:0.3.0
+workspace mode=rw
+home      mode=tmpfs size=512m
+
+egress {
+    allow registry-1.docker.io:443
+    allow registry.terraform.io:443
+    allow pypi.org:443
+    allow files.pythonhosted.org:443
+    allow dl-cdn.alpinelinux.org:443
+}
+
+limits { cpus 2; memory 4g; pids 512 }</pre>
+
+<p>This is <code>yolo-dev.tcl</code> — a session in which a developer (or an LLM) can run <code>terraform init</code> and <code>pip install</code> and <code>npm install</code>, but cannot reach the cloud control plane. Egress is opened to package registries only; everything else resolves to <code>127.0.0.1</code> and connects to nothing.<label for="sn-dns" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-dns" class="margin-toggle"/><span class="sidenote">The DNS trick is the simplest workable enforcement: the session's resolver returns the loopback for any hostname not on the allowlist, and the mitmproxy sidecar drops outbound TCP that wasn't explicitly allowed. Two layers, one purpose: nothing leaves the session that wasn't named in the profile.</span></p>
+
+<p>An AWS-credentialed profile adds a <code>creds</code> block:</p>
+
+<pre class="code">inherit base
+describe "Dev image, read-only AWS creds via STS, egress to AWS endpoints"
+image    cliff-dev:0.3.0
+workspace mode=rw
+home      mode=tmpfs size=512m
+
+creds {
+    aws helper=aws-sts args={role=READ_ROLE_ARN ttl=3600}
+}
+
+egress {
+    allow *.amazonaws.com:443
+    allow *.s3.amazonaws.com:443
+}
+
+limits { cpus 2; memory 4g; pids 512 }
+
+env {
+    AWS_SHARED_CREDENTIALS_FILE /run/creds/aws
+    AWS_REGION us-east-1
+}</pre>
+
+<p>The <code>creds</code> block names a helper (<code>aws-sts</code>) and its arguments (a role ARN and a TTL). At session start, the launcher invokes the helper on the host, which assumes the named role via STS and returns short-lived credentials. The credentials are written to a per-session tmpfs and bind-mounted into the container at <code>/run/creds/aws</code>. The container's environment points <code>AWS_SHARED_CREDENTIALS_FILE</code> at that path. Nothing about the long-lived credentials on the host ever enters the container; the container sees only the assumed-role credentials, with the TTL the profile declared.</p>
+</section>
+
+<h3>5.2 Sessions</h3>
+
+<section>
+<p>Every <code>cliff run</code> mints a session. A session is a UUID, a profile name, the resolved profile, a per-session network namespace, a per-session mitmproxy sidecar enforcing the egress allowlist, optionally a credential file mounted at <code>/run/creds</code>, and an audit record. The container exits, the sidecar dies, the tmpfs vanishes, the audit record persists.</p>
+
+<p><code>cliff sessions</code> lists recent sessions; <code>cliff session &lt;id&gt;</code> shows the detail of one. The session record is the answer to "what did the agent actually do?" — the profile it ran under, the start and end time, the exit code, and the egress events the mitmproxy sidecar logged. It is not a full trace; it is enough to know which profile ran, which endpoints it reached, and whether anything outside the allowlist was attempted.<label for="sn-audit" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-audit" class="margin-toggle"/><span class="sidenote">The audit story is deliberately minimal. Cliff is a development environment, not a SIEM. The point of the record is to make it possible to answer "what happened" after a session ends, not to be the system of record for security investigations.</span></p>
+</section>
+
+<h3>5.3 For LLMs</h3>
+
+<section>
+<p>The launcher exists because LLMs needed it. A coding agent given a shell on the host is given the host: it can <code>terraform apply</code> against production, exfiltrate credentials, install something that breaks an unrelated tool. A coding agent given <code>cliff exec dev-aws-read</code> is given exactly the affordances that profile names — read-only AWS access, egress to AWS endpoints, a writable workspace, and nothing else.</p>
+
+<p>The integration pattern is one paragraph in the project's <code>CLAUDE.md</code> (or its equivalent for other agents):</p>
+
+<blockquote>
+<p>For any infrastructure command (terraform, kubectl, aws, helm, etc.), invoke via <code>cliff exec &lt;profile&gt; --project=&lt;path&gt; -- &lt;cmd&gt;</code>. Do not run these tools directly on the host. See <code>cliff list</code> for available profiles.</p>
+</blockquote>
+
+<p>The agent reads that paragraph, sees the available profiles in <code>cliff list</code>, and from then on every infrastructure command runs in a hardened ephemeral session. The host stays clean. The blast radius of a misjudged command is the session's profile, not the user's laptop.</p>
+</section>
+
+<h2>6. Choosing</h2>
+
+<section>
+<p>The image is a shape; the profile is a posture. The two questions are independent:</p>
+
+<ol>
+<li><strong>Which image?</strong> Base if you want the substrate and nothing else. Dev if you are writing infrastructure code. Obsv if you are looking at telemetry. Full if you are doing both and don't want to switch tabs.</li>
+<li><strong>Which profile?</strong> Base for sandbox-only work — read code, run scripts, no network. <code>dev-offline</code> for IaC work without cloud access. <code>yolo-dev</code> when you need package registries but no cloud creds. <code>dev-aws-read</code> or <code>dev-aws-write</code> when you need scoped, time-limited cloud access. <code>obsv-local</code> for telemetry exploration.</li>
+</ol>
+
+<table class="booktabs">
+<thead>
+<tr><th>Profile</th><th>Image</th><th>Workspace</th><th>Creds</th><th>Egress</th></tr>
+</thead>
+<tbody>
+<tr><td><code>base</code></td><td>cliff-base</td><td>ro</td><td>none</td><td>none</td></tr>
+<tr><td><code>dev-offline</code></td><td>cliff-dev</td><td>rw</td><td>none</td><td>none</td></tr>
+<tr><td><code>yolo-dev</code></td><td>cliff-dev</td><td>rw</td><td>none</td><td>package registries</td></tr>
+<tr><td><code>dev-aws-read</code></td><td>cliff-dev</td><td>rw</td><td>STS read</td><td><code>*.amazonaws.com</code></td></tr>
+<tr><td><code>dev-aws-write</code></td><td>cliff-dev</td><td>rw</td><td>STS write</td><td><code>*.amazonaws.com</code></td></tr>
+<tr><td><code>obsv-local</code></td><td>cliff-obsv</td><td>ro</td><td>none</td><td>none</td></tr>
+</tbody>
+</table>
+
+<p>The profile shipped with the project are the floor of what's possible, not the ceiling. New profiles are short Tcl files; adding one for, say, a GCP read-only role is a five-minute exercise in copying <code>dev-aws-read.tcl</code> and changing the helper.</p>
+</section>
+
+<h2>7. Deployment scenarios</h2>
+
+<section>
+<p><span class="newthought">Where cliff runs is a design decision</span>, not a fact about cliff. The launcher is small enough to live on a laptop, on an EC2 instance, or anywhere else with Docker and a Tcl interpreter. What changes between deployments is who holds long-lived credentials, where the egress proxy sits, and what the trust boundary looks like. Three scenarios cover most of what people actually want.<label for="sn-status" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-status" class="margin-toggle"/><span class="sidenote">Of the three, only the first ships today. The other two are sketched here because the question of "where does cliff live?" comes up immediately on contact with a non-laptop host, and the answer should not have to be reverse-engineered.</span></p>
+</section>
+
+<h3>7.1 Laptop only — the current model</h3>
+
+<section>
+<p>Your laptop runs <code>bin/cliff</code>. Long-lived AWS credentials live in <code>~/.aws/credentials</code> on the laptop, never inside any container. When a profile names <code>creds { aws helper=aws-sts ... }</code>, the launcher calls <code>sts:AssumeRole</code> from the host, gets back temporary credentials with the profile's TTL, and writes them to a per-session tmpfs that's bind-mounted into the container at <code>/run/creds/aws</code>. The container's traffic flows through a per-session mitmproxy sidecar enforcing the egress allowlist. Everything the container does — <code>terraform apply</code>, <code>aws s3 ls</code>, whatever — uses the temporary creds, against AWS endpoints, with the proxy logging it.</p>
+
+<figure class="fullwidth">
+<svg viewBox="0 0 880 360" xmlns="http://www.w3.org/2000/svg" style="width:90%; max-width: 1000px;" font-family="Palatino, Georgia, serif" font-size="13" fill="#111">
+  <defs>
+    <marker id="arr1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#111"/></marker>
+  </defs>
+  <rect x="10" y="40" width="500" height="300" fill="#fffff8" stroke="#111" stroke-width="1.5"/>
+  <text x="260" y="32" text-anchor="middle" font-style="italic" font-size="14">your laptop</text>
+
+  <rect x="30" y="60" width="180" height="40" fill="#f4f3e6" stroke="#111"/>
+  <text x="120" y="84" text-anchor="middle" font-family="Consolas, monospace" font-size="12">bin/cliff (launcher)</text>
+
+  <rect x="30" y="120" width="180" height="40" fill="#fffff8" stroke="#111" stroke-dasharray="3,3"/>
+  <text x="120" y="138" text-anchor="middle" font-size="12">~/.aws/credentials</text>
+  <text x="120" y="152" text-anchor="middle" font-size="11" font-style="italic">(long-lived)</text>
+
+  <rect x="240" y="120" width="250" height="200" fill="#fffff8" stroke="#111"/>
+  <text x="365" y="114" text-anchor="middle" font-style="italic" font-size="13">cliff-dev container</text>
+  <rect x="260" y="135" width="100" height="36" fill="#f4f3e6" stroke="#111"/>
+  <text x="310" y="157" text-anchor="middle" font-family="Consolas, monospace" font-size="11">aws / tf</text>
+  <rect x="375" y="135" width="100" height="36" fill="#f4f3e6" stroke="#111"/>
+  <text x="425" y="151" text-anchor="middle" font-size="10">/run/creds/aws</text>
+  <text x="425" y="164" text-anchor="middle" font-size="10" font-style="italic">(tmpfs)</text>
+
+  <rect x="260" y="200" width="215" height="50" fill="#fffff8" stroke="#111" stroke-dasharray="4,2"/>
+  <text x="367" y="220" text-anchor="middle" font-size="12">mitmproxy sidecar</text>
+  <text x="367" y="236" text-anchor="middle" font-size="10" font-style="italic">egress allowlist enforcement</text>
+
+  <rect x="260" y="270" width="215" height="36" fill="#fffff8" stroke="#111" stroke-dasharray="2,2"/>
+  <text x="367" y="292" text-anchor="middle" font-size="11">per-session network namespace</text>
+
+  <rect x="600" y="40" width="270" height="300" fill="#fffff8" stroke="#111" stroke-width="1.5"/>
+  <text x="735" y="32" text-anchor="middle" font-style="italic" font-size="14">AWS</text>
+
+  <rect x="620" y="80" width="230" height="50" fill="#f4f3e6" stroke="#111"/>
+  <text x="735" y="100" text-anchor="middle" font-family="Consolas, monospace" font-size="12">sts.amazonaws.com</text>
+  <text x="735" y="118" text-anchor="middle" font-size="11" font-style="italic">AssumeRole</text>
+
+  <rect x="620" y="170" width="230" height="50" fill="#f4f3e6" stroke="#111"/>
+  <text x="735" y="190" text-anchor="middle" font-family="Consolas, monospace" font-size="12">ec2 / s3 / iam / ...</text>
+  <text x="735" y="208" text-anchor="middle" font-size="11" font-style="italic">scoped to assumed role</text>
+
+  <line x1="120" y1="100" x2="120" y2="120" stroke="#111" marker-end="url(#arr1)"/>
+  <text x="135" y="115" font-size="10" font-style="italic">reads</text>
+
+  <line x1="210" y1="80" x2="615" y2="100" stroke="#111" marker-end="url(#arr1)"/>
+  <text x="380" y="80" font-size="10" font-style="italic">1. AssumeRole(role-arn)</text>
+
+  <line x1="615" y1="115" x2="215" y2="135" stroke="#111" marker-end="url(#arr1)"/>
+  <text x="380" y="135" font-size="10" font-style="italic">2. temp creds, ttl 1h</text>
+
+  <line x1="160" y1="100" x2="375" y2="135" stroke="#111" marker-end="url(#arr1)"/>
+  <text x="240" y="118" font-size="10" font-style="italic">3. writes</text>
+
+  <line x1="475" y1="225" x2="615" y2="195" stroke="#111" marker-end="url(#arr1)"/>
+  <text x="510" y="200" font-size="10" font-style="italic">4. AWS API calls</text>
+</svg>
+<figcaption>Scenario 1. Laptop is the cliff host. Long-lived credentials never enter the container. STS issues a scoped, expiring identity per session; the mitmproxy sidecar logs and enforces the egress allowlist. The container can reach AWS endpoints and only AWS endpoints.</figcaption>
+</figure>
+
+<p>Trust boundary: the container. The laptop trusts the container with temp creds for the role's TTL and nothing more. If the container is compromised — if an LLM does something foolish, if a malicious package phones home — the blast radius is the role's permissions for the role's TTL, not the laptop's IAM identity forever.</p>
+</section>
+
+<h3>7.2 Cliff on an EC2 instance, bootstrapped by cloud-init</h3>
+
+<section>
+<p>The laptop launches an EC2 instance — by Terraform run via cliff, by <code>aws ec2 run-instances</code>, however. The instance has user-data that installs Docker, clones the cliff repo, drops profiles in place, and pre-pulls the cliff images. The user SSHes into the instance, and from there <code>cliff run yolo-dev</code> works exactly as it does on a laptop. The instance has an IAM instance role attached, so the AWS profiles use that role's automatically-provided credentials directly — no STS dance needed, because the instance metadata service already provides scoped, rotating credentials.<label for="sn-imds" class="margin-toggle sidenote-number"></label><input type="checkbox" id="sn-imds" class="margin-toggle"/><span class="sidenote">EC2 instance metadata at <code>http://169.254.169.254/</code> serves credentials for whatever role is attached to the instance. AWS rotates them automatically. The AWS SDK picks them up by default. Cliff's <code>aws-sts</code> helper is for the laptop case where there is no instance metadata; on EC2 the helper would degenerate into "read what the SDK would have read anyway."</span></p>
+
+<figure class="fullwidth">
+<svg viewBox="0 0 880 380" xmlns="http://www.w3.org/2000/svg" style="width:90%; max-width: 1000px;" font-family="Palatino, Georgia, serif" font-size="13" fill="#111">
+  <defs>
+    <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#111"/></marker>
+  </defs>
+
+  <rect x="10" y="60" width="220" height="260" fill="#fffff8" stroke="#111" stroke-width="1.5"/>
+  <text x="120" y="52" text-anchor="middle" font-style="italic" font-size="14">your laptop</text>
+  <rect x="30" y="100" width="180" height="40" fill="#f4f3e6" stroke="#111"/>
+  <text x="120" y="124" text-anchor="middle" font-family="Consolas, monospace" font-size="11">terraform / aws-cli</text>
+  <text x="120" y="170" text-anchor="middle" font-size="11" font-style="italic">SSH client</text>
+  <rect x="30" y="180" width="180" height="32" fill="#fffff8" stroke="#111" stroke-dasharray="3,3"/>
+  <text x="120" y="200" text-anchor="middle" font-family="Consolas, monospace" font-size="11">ssh user@ec2-host</text>
+
+  <rect x="270" y="40" width="380" height="320" fill="#fffff8" stroke="#111" stroke-width="1.5"/>
+  <text x="460" y="32" text-anchor="middle" font-style="italic" font-size="14">EC2 instance</text>
+
+  <rect x="290" y="60" width="340" height="50" fill="#f4f3e6" stroke="#111" stroke-dasharray="2,2"/>
+  <text x="460" y="80" text-anchor="middle" font-size="12">cloud-init / user-data</text>
+  <text x="460" y="98" text-anchor="middle" font-size="10" font-style="italic">installs Docker, clones cliff, lays down profiles, pulls images</text>
+
+  <rect x="290" y="130" width="160" height="40" fill="#f4f3e6" stroke="#111"/>
+  <text x="370" y="154" text-anchor="middle" font-family="Consolas, monospace" font-size="12">bin/cliff</text>
+
+  <rect x="470" y="130" width="160" height="40" fill="#fffff8" stroke="#111" stroke-dasharray="3,3"/>
+  <text x="550" y="148" text-anchor="middle" font-size="11">IAM instance role</text>
+  <text x="550" y="162" text-anchor="middle" font-size="10" font-style="italic">via 169.254.169.254</text>
+
+  <rect x="290" y="190" width="340" height="160" fill="#fffff8" stroke="#111"/>
+  <text x="460" y="184" text-anchor="middle" font-style="italic" font-size="13">cliff-dev container</text>
+  <rect x="310" y="210" width="120" height="36" fill="#f4f3e6" stroke="#111"/>
+  <text x="370" y="232" text-anchor="middle" font-family="Consolas, monospace" font-size="11">aws / tf</text>
+  <rect x="450" y="210" width="160" height="36" fill="#f4f3e6" stroke="#111"/>
+  <text x="530" y="226" text-anchor="middle" font-size="10">creds via IMDS</text>
+  <text x="530" y="240" text-anchor="middle" font-size="10" font-style="italic">(no STS mint needed)</text>
+  <rect x="310" y="270" width="300" height="40" fill="#fffff8" stroke="#111" stroke-dasharray="4,2"/>
+  <text x="460" y="290" text-anchor="middle" font-size="12">mitmproxy sidecar</text>
+  <text x="460" y="304" text-anchor="middle" font-size="10" font-style="italic">egress allowlist still enforced</text>
+
+  <rect x="700" y="60" width="160" height="300" fill="#fffff8" stroke="#111" stroke-width="1.5"/>
+  <text x="780" y="52" text-anchor="middle" font-style="italic" font-size="14">AWS</text>
+  <rect x="715" y="100" width="135" height="40" fill="#f4f3e6" stroke="#111"/>
+  <text x="782" y="124" text-anchor="middle" font-family="Consolas, monospace" font-size="11">sts / ec2 / s3 / ...</text>
+
+  <line x1="210" y1="118" x2="715" y2="118" stroke="#111" marker-end="url(#arr2)"/>
+  <text x="430" y="112" font-size="10" font-style="italic">1. terraform apply (creates EC2)</text>
+
+  <line x1="210" y1="195" x2="290" y2="155" stroke="#111" marker-end="url(#arr2)"/>
+  <text x="220" y="178" font-size="10" font-style="italic">2. SSH</text>
+
+  <line x1="610" y1="225" x2="715" y2="125" stroke="#111" marker-end="url(#arr2)"/>
+  <text x="640" y="180" font-size="10" font-style="italic">3. AWS API</text>
+</svg>
+<figcaption>Scenario 2. The instance is the cliff host. Cloud-init bootstraps cliff at first boot. The instance role replaces STS-from-laptop — the AWS SDK reads credentials from the instance metadata service automatically. Cliff's egress allowlist still enforces what the container can reach.</figcaption>
+</figure>
+
+<p>What this scenario buys you: cliff's egress, tmpfs home, audit log, and resource caps, in a place where you wanted a hardened shell anyway. What it costs: a slow first boot, a non-trivial cloud-init, and the operational story of "what version of cliff is on this instance" is whatever the user-data pulled. A pre-baked AMI is the obvious next step if this becomes routine.</p>
+</section>
+
+<h3>7.3 EC2 with an instance role, no cliff on the instance</h3>
+
+<section>
+<p>The instance has a role attached. The user SSHes in and runs <code>aws</code> and <code>terraform</code> directly. There is no cliff on the EC2 host; the instance role is the leash. This is the scenario where you decide cliff's other features — egress allowlist, ephemeral home, audit — are not worth the operational tax on every dev box, and that the IAM role boundary is sufficient.</p>
+
+<figure class="fullwidth">
+<svg viewBox="0 0 880 320" xmlns="http://www.w3.org/2000/svg" style="width:90%; max-width: 1000px;" font-family="Palatino, Georgia, serif" font-size="13" fill="#111">
+  <defs>
+    <marker id="arr3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#111"/></marker>
+  </defs>
+
+  <rect x="10" y="40" width="220" height="240" fill="#fffff8" stroke="#111" stroke-width="1.5"/>
+  <text x="120" y="32" text-anchor="middle" font-style="italic" font-size="14">your laptop</text>
+  <rect x="30" y="80" width="180" height="40" fill="#f4f3e6" stroke="#111"/>
+  <text x="120" y="104" text-anchor="middle" font-family="Consolas, monospace" font-size="11">bin/cliff</text>
+  <text x="120" y="155" text-anchor="middle" font-size="11" font-style="italic">used to provision only</text>
+  <rect x="30" y="170" width="180" height="32" fill="#fffff8" stroke="#111" stroke-dasharray="3,3"/>
+  <text x="120" y="190" text-anchor="middle" font-family="Consolas, monospace" font-size="11">ssh user@ec2-host</text>
+
+  <rect x="270" y="40" width="320" height="240" fill="#fffff8" stroke="#111" stroke-width="1.5"/>
+  <text x="430" y="32" text-anchor="middle" font-style="italic" font-size="14">EC2 instance (vanilla)</text>
+
+  <rect x="290" y="80" width="280" height="40" fill="#f4f3e6" stroke="#111"/>
+  <text x="430" y="104" text-anchor="middle" font-family="Consolas, monospace" font-size="12">aws / terraform / kubectl</text>
+
+  <rect x="290" y="140" width="280" height="40" fill="#fffff8" stroke="#111" stroke-dasharray="3,3"/>
+  <text x="430" y="160" text-anchor="middle" font-size="11">IAM instance role attached</text>
+  <text x="430" y="173" text-anchor="middle" font-size="10" font-style="italic">credentials via instance metadata</text>
+
+  <text x="430" y="220" text-anchor="middle" font-size="11" font-style="italic">no cliff, no mitmproxy, no audit log</text>
+
+  <rect x="630" y="40" width="220" height="240" fill="#fffff8" stroke="#111" stroke-width="1.5"/>
+  <text x="740" y="32" text-anchor="middle" font-style="italic" font-size="14">AWS</text>
+  <rect x="650" y="80" width="180" height="40" fill="#f4f3e6" stroke="#111"/>
+  <text x="740" y="104" text-anchor="middle" font-family="Consolas, monospace" font-size="11">ec2 / s3 / iam / ...</text>
+  <text x="740" y="150" text-anchor="middle" font-size="11" font-style="italic">authorized against</text>
+  <text x="740" y="165" text-anchor="middle" font-size="11" font-style="italic">the instance role's policy</text>
+
+  <line x1="210" y1="100" x2="650" y2="100" stroke="#111" marker-end="url(#arr3)"/>
+  <text x="380" y="92" font-size="10" font-style="italic">1. provision EC2 (cliff exec dev-aws-write -- terraform apply)</text>
+
+  <line x1="210" y1="185" x2="290" y2="105" stroke="#111" marker-end="url(#arr3)"/>
+  <text x="220" y="170" font-size="10" font-style="italic">2. SSH</text>
+
+  <line x1="570" y1="100" x2="650" y2="100" stroke="#111" marker-end="url(#arr3)"/>
+  <text x="595" y="92" font-size="10" font-style="italic">3.</text>
+</svg>
+<figcaption>Scenario 3. Cliff stays on the laptop and is used only to provision. The EC2 instance has an instance role; <code>aws</code> and <code>terraform</code> on the instance authenticate via instance metadata. The leash is the role's policy. There is no egress allowlist, no audit log, no tmpfs home — the instance is trusted to a degree that cliff's container is not.</figcaption>
+</figure>
+
+<p>This is the right answer when "give me a hardened sandbox" is not the actual requirement — when the actual requirement is "give me an EC2 box where I can do AWS work, scoped to a role." Adding cliff on top would be belt-and-suspenders for a problem the role already solves. What you give up is the parts of cliff that have nothing to do with credentials: the egress allowlist (the box can talk to anything the security group allows), the audit log (whatever shell history you keep is your record), and the ephemeral home (the box is long-lived, with whatever state accumulates).</p>
+
+<table class="booktabs fullwidth">
+<thead>
+<tr><th>Scenario</th><th>Cliff host</th><th>Creds source</th><th>Egress control</th><th>Audit</th><th>Status</th></tr>
+</thead>
+<tbody>
+<tr><td>1. Laptop only</td><td>Laptop</td><td>STS from laptop's IAM identity</td><td>mitmproxy sidecar</td><td>Per-session record</td><td>Ships</td></tr>
+<tr><td>2. Cliff on EC2 (cloud-init)</td><td>EC2 instance</td><td>Instance role via IMDS</td><td>mitmproxy sidecar</td><td>Per-session record</td><td>Sketched</td></tr>
+<tr><td>3. EC2 instance role only</td><td>None on EC2</td><td>Instance role via IMDS</td><td>Security group only</td><td>Shell history</td><td>Native AWS</td></tr>
+</tbody>
+</table>
+</section>
+
+<h2>Appendix: dependency tree by variant</h2>
+
+<section>
+<p>What is in each image, by group, with the version pinned in the Dockerfile when one exists. Versions without an explicit pin are inherited from the upstream package repository at build time and may drift between rebuilds of the same tag.</p>
+</section>
+
+<h3>cliff-base</h3>
+
+<section>
+<table class="booktabs fullwidth">
+<thead>
+<tr><th>Group</th><th>Package</th><th>Version</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr class="group"><td>OS</td><td>alpine</td><td>3.23</td><td>Substrate.</td></tr>
+<tr class="group"><td>Shell</td><td>bash, fish, sudo, shadow</td><td>apk</td><td>Interactive shells; <code>fish</code> is devuser's default.</td></tr>
+<tr><td></td><td>tmux, mosh</td><td>apk</td><td>Multiplexer and resilient shell.</td></tr>
+<tr><td></td><td>openssh-client</td><td>apk</td><td>Outbound SSH.</td></tr>
+<tr class="group"><td>Data</td><td>curl, wget</td><td>apk</td><td>HTTP clients.</td></tr>
+<tr><td></td><td>jq, yq</td><td>apk</td><td>JSON and YAML processors.</td></tr>
+<tr><td></td><td>git</td><td>apk</td><td>Version control.</td></tr>
+<tr><td></td><td>sqlite</td><td>apk</td><td>Local persistence.</td></tr>
+<tr><td></td><td>unzip, tar, gzip, xz</td><td>apk</td><td>Archive tooling.</td></tr>
+<tr><td></td><td>coreutils</td><td>apk</td><td>GNU coreutils (musl busybox replacements).</td></tr>
+<tr class="group"><td>Network</td><td>wireguard-tools</td><td>apk</td><td>Reach private networks.</td></tr>
+<tr><td></td><td>ca-certificates</td><td>apk</td><td>System trust store; cliff-egress CA added.</td></tr>
+<tr class="group"><td>Build</td><td>build-base</td><td>apk</td><td>Compilers + headers; required for Erlang NIFs.</td></tr>
+<tr><td></td><td>openssl, openssl-dev</td><td>apk</td><td>TLS library and headers.</td></tr>
+<tr><td></td><td>ncurses-dev</td><td>apk</td><td>Terminal library headers.</td></tr>
+<tr><td></td><td>libstdc++</td><td>apk</td><td>C++ runtime.</td></tr>
+<tr class="group"><td>Languages</td><td>tcl, tk</td><td>apk</td><td>Project scripting language.</td></tr>
+<tr><td></td><td>erlang, erlang-dev</td><td>apk</td><td>BEAM runtime + headers.</td></tr>
+<tr><td></td><td>elixir</td><td>apk</td><td>Application language.</td></tr>
+<tr><td></td><td>nix</td><td>upstream installer</td><td>Per-user package escape hatch.</td></tr>
+<tr class="group"><td>Identity</td><td>devuser</td><td>—</td><td>Unprivileged user with passwordless sudo.</td></tr>
+<tr><td></td><td>cliff-egress.crt</td><td>—</td><td>mitmproxy CA in system trust store.</td></tr>
+</tbody>
+</table>
+</section>
+
+<h3>cliff-dev (adds to cliff-base)</h3>
+
+<section>
+<table class="booktabs fullwidth">
+<thead>
+<tr><th>Group</th><th>Package</th><th>Version</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr class="group"><td>IaC</td><td>terraform</td><td>1.14.5</td><td>HCL infrastructure synthesis.</td></tr>
+<tr><td></td><td>packer</td><td>1.15.0</td><td>Image builder.</td></tr>
+<tr><td></td><td>ansible-core</td><td>pip latest</td><td>Configuration management.</td></tr>
+<tr class="group"><td>Kubernetes</td><td>kubectl</td><td>v1.35.1</td><td>Cluster client.</td></tr>
+<tr><td></td><td>helm</td><td>upstream latest</td><td>Chart manager (unpinned; upstream script).</td></tr>
+<tr class="group"><td>Secrets / PKI</td><td>vault</td><td>1.21.2</td><td>HashiCorp Vault CLI.</td></tr>
+<tr><td></td><td>step</td><td>0.29.0</td><td>Smallstep CLI.</td></tr>
+<tr class="group"><td>Cloud CLIs</td><td>aws-cli</td><td>apk or pip</td><td>AWS control plane.</td></tr>
+<tr><td></td><td>azure-cli</td><td>pip latest</td><td>Azure control plane (best-effort install).</td></tr>
+<tr><td></td><td>google-cloud-sdk</td><td>upstream latest</td><td>GCP control plane.</td></tr>
+<tr class="group"><td>Network / edge</td><td>tailscale</td><td>apk or upstream</td><td>Mesh VPN client.</td></tr>
+<tr><td></td><td>wrangler</td><td>npm latest</td><td>Cloudflare Workers CLI.</td></tr>
+<tr class="group"><td>Runtimes (transitive)</td><td>python3, py3-pip</td><td>apk</td><td>Pulled in by Ansible / pip-installed CLIs.</td></tr>
+<tr><td></td><td>nodejs, npm</td><td>apk</td><td>Pulled in by Wrangler.</td></tr>
+</tbody>
+</table>
+</section>
+
+<h3>cliff-obsv (adds to cliff-base)</h3>
+
+<section>
+<table class="booktabs fullwidth">
+<thead>
+<tr><th>Group</th><th>Package</th><th>Version</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr class="group"><td>Metrics</td><td>prometheus, promtool</td><td>3.9.1</td><td>Time-series store and rule checker.</td></tr>
+<tr><td></td><td>grafana, grafana-cli</td><td>12.3.3</td><td>Dashboards (binary, not service).</td></tr>
+<tr class="group"><td>Logs</td><td>loki</td><td>3.6.6</td><td>Log aggregator (binary).</td></tr>
+<tr><td></td><td>logcli</td><td>3.6.6</td><td>Loki query client.</td></tr>
+<tr><td></td><td>vector</td><td>0.53.0</td><td>Log/metric pipeline.</td></tr>
+<tr class="group"><td>Host inspection</td><td>osquery</td><td>5.21.0</td><td>SQL over OS state.</td></tr>
+<tr class="group"><td>Database</td><td>postgresql-client (psql)</td><td>apk</td><td>Postgres query client.</td></tr>
+</tbody>
+</table>
+</section>
+
+<h3>cliff-full</h3>
+
+<section>
+<p>cliff-full is built FROM cliff-dev, with the obsv RUN blocks layered on top. The dependency tree is the union of cliff-dev and cliff-obsv. Versions are identical to those tables; the build does not pin them differently.</p>
+</section>
+
+<footer>
+<p style="font-size: 1.0rem; font-style: italic; margin-top: 4rem;">cliff — 2026-04-28 — AGPL-3.0</p>
+</footer>
+
+</article>
+</body>
+</html>
