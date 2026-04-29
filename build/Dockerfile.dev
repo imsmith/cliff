@@ -69,6 +69,18 @@ RUN STEP_VERSION="0.29.0" && \
     cp /tmp/step_*/bin/step /usr/local/bin/ && \
     rm -rf /tmp/step*
 
+# OpenJDK JRE (for ZAP and other JVM tools)
+RUN apk add --no-cache openjdk17-jre-headless
+
+# OWASP ZAP — cross-platform package, runs as a normal Java process
+# (no podman/docker required, works in cliff's locked-down sandbox).
+RUN ZAP_VERSION="2.17.0" && \
+    curl -fsSL "https://github.com/zaproxy/zaproxy/releases/download/v${ZAP_VERSION}/ZAP_${ZAP_VERSION}_Crossplatform.zip" -o /tmp/zap.zip && \
+    unzip -q /tmp/zap.zip -d /opt/ && \
+    mv "/opt/ZAP_${ZAP_VERSION}" /opt/zap && \
+    ln -sf /opt/zap/zap.sh /usr/local/bin/zap && \
+    rm /tmp/zap.zip
+
 USER devuser
 WORKDIR /home/devuser
 
