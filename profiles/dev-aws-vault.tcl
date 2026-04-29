@@ -8,7 +8,7 @@ home      mode=tmpfs size=512m
 # Creds expire mid-session if you exceed the role's session duration —
 # this is intentional (circuit breaker for exploratory work).
 creds {
-    aws helper=aws-vault args={profile=avx duration=3600}
+    aws helper=aws-vault args={profile=kata duration=14400}
 }
 
 egress {

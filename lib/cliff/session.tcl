@@ -44,6 +44,22 @@ namespace eval ::cliff::session {
         # Materialize creds (currently no-op if profile has none)
         set creds [cliff::creds::materialize $profile]
 
+        # Stage creds in a host-side dir we'll bind-mount read-only into the
+        # container at /run/creds. Kept under the session dir so cleanup is
+        # tied to session lifecycle.
+        set creds_dir ""
+        if {[dict size $creds] > 0} {
+            set creds_dir [file join $sdir creds]
+            file mkdir $creds_dir
+            file attributes $creds_dir -permissions 0700
+            dict for {name bytes} $creds {
+                set fpath [file join $creds_dir $name]
+                set fh [open $fpath w 0600]
+                puts -nonewline $fh $bytes
+                close $fh
+            }
+        }
+
         # Start egress sidecar if needed
         set need_egress [cliff::egress::needs_sidecar $profile]
         if {$need_egress} {
@@ -76,8 +92,10 @@ namespace eval ::cliff::session {
         set argv [cliff::docker::build_argv \
             session_id $id \
             profile $profile \
+            profile_name $profile_name \
             project $A(project) \
-            command $command]
+            command $command \
+            creds_dir $creds_dir]
 
         # Inject egress env + DNS: insert before the image name so docker sees
         # these as options, not as arguments to the container command.
@@ -103,34 +121,15 @@ namespace eval ::cliff::session {
             if {$idx >= 0} { set argv [lreplace $argv $idx $idx -it] }
         }
 
-        # Two-stage: docker create → docker cp creds → docker start -ai
-
-        # Replace "docker run" with "docker create"; drop --rm (not valid with create).
-        set create_argv [lreplace $argv 0 1 docker create]
-        set idx [lsearch $create_argv "--rm"]
-        if {$idx >= 0} { set create_argv [lreplace $create_argv $idx $idx] }
-
-        set container_id [string trim [exec {*}$create_argv]]
-
-        # Write creds into /run/creds inside the container.
-        dict for {name bytes} $creds {
-            set tmp_path [file join /tmp cliff-creds-[pid]-[clock microseconds]-$name]
-            set fh [open $tmp_path w 0600]
-            puts -nonewline $fh $bytes
-            close $fh
-            exec docker cp $tmp_path $container_id:/run/creds/$name
-            file delete $tmp_path
-        }
-
+        # Creds are bind-mounted via build_argv (creds_dir=...), so no
+        # post-create injection step is required. Run directly.
         set exit_code 0
-        set start_flags [expr {$A(interactive) ? "-ai" : "-a"}]
         if {[catch {
-            exec docker start $start_flags $container_id >@stdout 2>@stderr <@stdin
+            exec {*}$argv >@stdout 2>@stderr <@stdin
         } err]} {
             set exit_code 1
             puts stderr "cliff: session $id failed: $err"
         }
-        catch { exec docker rm -f $container_id }
 
         # Teardown: give mitmdump a moment to flush remaining log lines
         # before docker stop sends SIGTERM.

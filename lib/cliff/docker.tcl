@@ -1,6 +1,6 @@
 namespace eval ::cliff::docker {
     proc build_argv {args} {
-        array set A {session_id "" profile "" project "" command ""}
+        array set A {session_id "" profile "" profile_name "" project "" command "" creds_dir ""}
         array set A $args
         set p $A(profile)
 
@@ -11,8 +11,15 @@ namespace eval ::cliff::docker {
             --read-only \
             --cap-drop ALL \
             --security-opt no-new-privileges \
-            --tmpfs /tmp:rw,size=256m,mode=1777 \
-            --tmpfs /run/creds:rw,size=8m,mode=0700,uid=1000,gid=1000]
+            --tmpfs /tmp:rw,size=256m,mode=1777]
+
+        # Creds: bind-mount a host staging dir (read-only) if creds were
+        # materialized; otherwise mount an empty tmpfs so /run/creds exists.
+        if {$A(creds_dir) ne ""} {
+            lappend argv --volume $A(creds_dir):/run/creds:ro
+        } else {
+            lappend argv --tmpfs /run/creds:rw,size=8m,mode=0700,uid=1000,gid=1000
+        }
 
         # Network: none if no egress allow entries; session network otherwise
         set has_egress 0
@@ -41,6 +48,12 @@ namespace eval ::cliff::docker {
         if {[dict exists $p limits cpus]}   { lappend argv --cpus [dict get $p limits cpus] }
         if {[dict exists $p limits memory]} { lappend argv --memory [dict get $p limits memory] }
         if {[dict exists $p limits pids]}   { lappend argv --pids-limit [dict get $p limits pids] }
+
+        # Cliff identity env (always set so consumers can detect they're in a session)
+        lappend argv --env CLIFF_SESSION_ID=$A(session_id)
+        if {$A(profile_name) ne ""} {
+            lappend argv --env CLIFF_PROFILE=$A(profile_name)
+        }
 
         # Env
         if {[dict exists $p env]} {

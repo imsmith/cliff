@@ -31,8 +31,8 @@ if {[catch {exec {*}$cmd} out err]} {
     exit 1
 }
 
-# aws-vault --format=ini emits "[profile NAME]" headers; rewrite the requested
-# profile to "[default]" so AWS_SHARED_CREDENTIALS_FILE consumers pick it up
-# without further configuration.
-regsub -line "^\\\[profile $kv(profile)\\\]\$" $out "\[default\]" out
+# aws-vault --format=ini emits "[NAME]" headers (credentials-file syntax);
+# rewrite the requested profile to "[default]" so AWS_SHARED_CREDENTIALS_FILE
+# consumers pick it up without further configuration.
+regsub -line "^\\\[$kv(profile)\\\]\$" $out "\[default\]" out
 puts $out
