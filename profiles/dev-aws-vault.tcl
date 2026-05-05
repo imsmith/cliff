@@ -14,6 +14,10 @@ creds {
 egress {
     allow *.amazonaws.com:443
     allow *.s3.amazonaws.com:443
+    # ALBs in test rigs serve HTTP on port 80. Allow egress to any ELB
+    # hostname on 80 so we can probe deployed ALBs from inside the session.
+    allow *.elb.amazonaws.com:80
+    allow *.elb.amazonaws.com:443
 }
 
 limits { cpus 2; memory 4g; pids 512 }
