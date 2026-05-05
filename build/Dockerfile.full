@@ -1,4 +1,4 @@
-FROM ghcr.io/imsmith/cliff-dev:0.3.0
+FROM ghcr.io/imsmith/cliff-dev:0.4.0
 
 LABEL description="Cliff full image — dev tools + observability stack"
 LABEL org.opencontainers.image.source=https://github.com/imsmith/cliff

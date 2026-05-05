@@ -1,4 +1,4 @@
-VERSION ?= 0.3.0
+VERSION ?= 0.4.0
 REGISTRY ?= ghcr.io/imsmith
 
 .PHONY: build-base build-dev build-obsv build-full build-all \

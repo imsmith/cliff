@@ -1,4 +1,4 @@
-FROM ghcr.io/imsmith/cliff-base:0.3.0
+FROM ghcr.io/imsmith/cliff-base:0.4.0
 
 LABEL description="Cliff observability image — monitoring, logging, querying tools"
 LABEL org.opencontainers.image.source=https://github.com/imsmith/cliff
