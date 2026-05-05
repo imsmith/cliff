@@ -43,6 +43,7 @@ RUN update-ca-certificates
 # Tcl/Tk
 RUN apk add --no-cache \
     tcl \
+    tcl-tls \
     tk
 
 # Erlang/OTP + Elixir
